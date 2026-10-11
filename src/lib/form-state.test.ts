@@ -56,20 +56,20 @@ describe("saving a branching section", () => {
     const before: FormState = {
       ...EMPTY_FORM,
       eligibility: {
-        age: "yes",
         residency: "yes",
-        otherSupport: "yes",
-        otherSupportDetail: "AISH",
+        status: "yes",
+        otherHealthBenefits: "yes",
       },
     };
 
     const after = formReducer(before, {
       type: "save-eligibility",
-      answers: { age: "yes", residency: "yes", otherSupport: "no" },
+      answers: { residency: "yes", status: "no" },
     });
 
-    expect(after.eligibility.otherSupportDetail).toBeUndefined();
+    expect(after.eligibility.otherHealthBenefits).toBeUndefined();
   });
+
 });
 
 describe("children", () => {

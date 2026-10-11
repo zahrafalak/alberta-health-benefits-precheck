@@ -10,10 +10,9 @@ export type SectionId = "eligibility" | "about-you" | "your-children" | "documen
 
 /** Screener answers. See src/sections/eligibility/rules.ts for how they branch. */
 export type EligibilityAnswers = {
-  age?: YesNo;
   residency?: YesNo;
-  otherSupport?: YesNo;
-  otherSupportDetail?: string;
+  status?: YesNo;
+  otherHealthBenefits?: YesNo;
 };
 
 export type AboutYouAnswers = {

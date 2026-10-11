@@ -14,10 +14,9 @@ import { STEPS, reachable } from "./rules";
 
 /** What each Change link changes, in its accessible name: destinations rather than page headings. */
 const CHANGE_CONTEXT = {
-  age: "your age",
   residency: "where you live",
-  otherSupport: "other program support",
-  otherSupportDetail: "the program name",
+  status: "your citizenship or residency status",
+  otherHealthBenefits: "health benefits from other programs",
 } as const;
 
 export function EligibilitySummary({ returnTo }: SummaryProps) {
@@ -35,9 +34,7 @@ export function EligibilitySummary({ returnTo }: SummaryProps) {
           changeContext={CHANGE_CONTEXT[step]}
         >
           <SummaryItem question={STEPS[step].heading}>
-            {step === "otherSupportDetail"
-              ? answer(answers.otherSupportDetail)
-              : answer(formatYesNo(answers[step]))}
+            {answer(formatYesNo(answers[step]))}
           </SummaryItem>
         </SummarySection>
       ))}

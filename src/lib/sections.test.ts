@@ -16,9 +16,9 @@ import {
 } from "./sections";
 
 const passedScreener: FormState["eligibility"] = {
-  age: "yes",
   residency: "yes",
-  otherSupport: "no",
+  status: "yes",
+  otherHealthBenefits: "no",
 };
 
 const completeAboutYou: FormState["aboutYou"] = {
@@ -61,13 +61,13 @@ describe("locking", () => {
   });
 
   it("keeps the rest shut when the screener finished but failed", () => {
-    const failed = state({ eligibility: { age: "no" } });
+    const failed = state({ eligibility: { residency: "no" } });
     expect(sectionStatus(sectionById("about-you"), failed)).toBe("cannot-start");
   });
 
   // Locked has to win, whatever is stored against the section.
   it("reports locked even when the section already holds answers", () => {
-    const odd = state({ eligibility: { age: "no" }, aboutYou: completeAboutYou });
+    const odd = state({ eligibility: { residency: "no" }, aboutYou: completeAboutYou });
     expect(sectionStatus(sectionById("about-you"), odd)).toBe("cannot-start");
   });
 });
@@ -76,7 +76,7 @@ describe("section progress", () => {
   it("moves the screener from not started to in progress to completed", () => {
     const section = sectionById("eligibility");
     expect(sectionStatus(section, state())).toBe("not-started");
-    expect(sectionStatus(section, state({ eligibility: { age: "yes" } }))).toBe(
+    expect(sectionStatus(section, state({ eligibility: { residency: "yes" } }))).toBe(
       "in-progress",
     );
     expect(
@@ -92,7 +92,7 @@ describe("section progress", () => {
     expect(
       sectionStatus(
         sectionById("eligibility"),
-        state({ eligibility: { age: "no" }, confirmed: ["eligibility"] }),
+        state({ eligibility: { residency: "no" }, confirmed: ["eligibility"] }),
       ),
     ).toBe("completed");
   });

@@ -6,17 +6,22 @@ import type { EligibilityAnswers } from "../../lib/form-state";
  * review page, and counting how many questions a change newly opened.
  */
 
-export type StepId = "age" | "residency" | "otherSupport" | "otherSupportDetail";
+/**
+ * Who can use the Alberta Child and Adult Health Benefits, from both program pages on
+ * alberta.ca (see src/lib/health-benefits.ts for the sources): live in Alberta, be a
+ * Canadian citizen or permanent resident, and not get health benefits from Income
+ * Support, AISH or the federal Non-Insured Health Benefits program. Each is a gate.
+ */
+export type StepId = "residency" | "status" | "otherHealthBenefits";
 export type Outcome = "review" | "ineligible";
 
 export const NEXT: Record<StepId, (a: EligibilityAnswers) => StepId | Outcome> = {
-  age: (a) => (a.age === "yes" ? "residency" : "ineligible"),
-  residency: (a) => (a.residency === "yes" ? "otherSupport" : "ineligible"),
-  otherSupport: (a) => (a.otherSupport === "yes" ? "otherSupportDetail" : "review"),
-  otherSupportDetail: () => "review",
+  residency: (a) => (a.residency === "yes" ? "status" : "ineligible"),
+  status: (a) => (a.status === "yes" ? "otherHealthBenefits" : "ineligible"),
+  otherHealthBenefits: (a) => (a.otherHealthBenefits === "no" ? "review" : "ineligible"),
 };
 
-export const FIRST_STEP: StepId = "age";
+export const FIRST_STEP: StepId = "residency";
 
 export type StepConfig = {
   heading: string;
@@ -26,29 +31,24 @@ export type StepConfig = {
 };
 
 export const STEPS: Record<StepId, StepConfig> = {
-  age: {
-    heading: "Are you 18 or older?",
-    requiredError: "Select yes if you are 18 or older",
-    field: "yesno",
-    previous: null,
-  },
   residency: {
     heading: "Do you live in Alberta?",
     requiredError: "Select yes if you live in Alberta",
     field: "yesno",
-    previous: "age",
+    previous: null,
   },
-  otherSupport: {
-    heading: "Are you receiving support from another program?",
-    requiredError: "Select yes if you are receiving support from another program",
+  status: {
+    heading: "Are you a Canadian citizen or permanent resident?",
+    requiredError: "Select yes if you are a Canadian citizen or permanent resident",
     field: "yesno",
     previous: "residency",
   },
-  otherSupportDetail: {
-    heading: "Which program is supporting you?",
-    requiredError: "Enter the name of the program",
-    field: "text",
-    previous: "otherSupport",
+  otherHealthBenefits: {
+    heading:
+      "Does anyone in your household get health benefits from Income Support, AISH or the federal Non-Insured Health Benefits program?",
+    requiredError: "Select yes if anyone in your household gets health benefits from one of these programs",
+    field: "yesno",
+    previous: "status",
   },
 };
 

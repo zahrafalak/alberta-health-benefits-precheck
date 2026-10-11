@@ -3,6 +3,7 @@ import { GoabButton, GoabButtonGroup, GoabText } from "@abgov/react-components";
 import { ResultsPage, ResultContactSection } from "../../components/results-page";
 import { useForm } from "../../store/form-store";
 import { screenerOutcome } from "./rules";
+import { SOURCES } from "../../lib/health-benefits";
 
 /**
  * The screener ruled them out. Says which answer decided it, and offers a way back,
@@ -15,11 +16,13 @@ export function NotEligible() {
 
   // Name the specific gate rather than saying "you are not eligible" and stopping.
   const reason =
-    answers.age === "no"
-      ? "This support is only available to people aged 18 or older."
-      : answers.residency === "no"
-        ? "This support is only available to people living in Alberta."
-        : "Based on your answers, you cannot apply for this support.";
+    answers.residency === "no"
+      ? "The Alberta Child and Adult Health Benefits are for people who live in Alberta."
+      : answers.status === "no"
+        ? "The Alberta Child and Adult Health Benefits are for Canadian citizens and permanent residents."
+        : answers.otherHealthBenefits === "yes"
+          ? "People who get health benefits from Income Support, AISH or the federal Non-Insured Health Benefits program can't also get these benefits. Those programs already cover health costs."
+          : "Based on your answers, these benefits may not be for you.";
 
   // Someone who arrives here without having failed the screener took a wrong turn.
   if (screenerOutcome(answers) !== "ineligible") {
@@ -41,9 +44,9 @@ export function NotEligible() {
 
   return (
     <ResultsPage
-      heading="You cannot apply for this support"
+      heading="These benefits may not be for you"
       status="important"
-      statusHeading="You are not eligible"
+      statusHeading="You may not qualify"
       statusBody={reason}
       actions={
         <GoabButtonGroup alignment="start">
@@ -57,11 +60,12 @@ export function NotEligible() {
       }
     >
       <GoabText tag="h2" mt="xl" mb="s">
-        Other support you may be able to get
+        Check the official program pages
       </GoabText>
       <GoabText mt="none" mb="none">
-        [Link to other programs a person in this situation might qualify for. A dead end
-        with no onward route is a poor outcome even when the answer is no.]
+        This is an unofficial pre-check. The program pages explain who can apply and how:{" "}
+        <a href={SOURCES.child.url}>{SOURCES.child.name}</a> and{" "}
+        <a href={SOURCES.adult.url}>{SOURCES.adult.name}</a>.
       </GoabText>
 
       <ResultContactSection />
