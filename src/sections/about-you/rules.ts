@@ -1,14 +1,15 @@
 import type { AboutYouAnswers } from "../../lib/form-state";
-import type { Household } from "../../lib/health-benefits";
-import { all, pattern, required, runSchema, type Schema } from "../../lib/validation";
+import { ADULT_CONDITIONS, type AdultCondition, type Household } from "../../lib/health-benefits";
+import { all, minSelected, pattern, required, runSchema, type Rule, type Schema } from "../../lib/validation";
 
 /**
- * Your household: who the income limit is for. Two pages, in order, no branching. Only
+ * Your household: who the income limit is for, and whether the Adult Health Benefit's
+ * conditions apply. Three pages, in order, no branching. Only
  * what the rules use is asked: whether there is a partner and how many children, never
  * names or dates of birth (privacy by design; see src/lib/health-benefits.ts).
  */
 
-export type AboutYouStepId = "partner" | "children";
+export type AboutYouStepId = "partner" | "children" | "adult-conditions";
 
 export type AboutYouField = keyof AboutYouAnswers;
 
@@ -18,6 +19,12 @@ export type AboutYouStepConfig = {
   /** Rules for those answers, in field order so the error summary reads top to bottom. */
   schema: Schema;
 };
+
+/** "None of these" can't be ticked together with a condition. */
+const noneAlone: Rule = (v) =>
+  Array.isArray(v) && v.includes("none") && v.length > 1
+    ? "Select the conditions that apply, or None of these, not both"
+    : null;
 
 /** A whole number of children, as typed: up to two digits, no signs or decimals. */
 const WHOLE_NUMBER = /^\d{1,2}$/;
@@ -41,7 +48,24 @@ export const ABOUT_YOU_STEPS: Record<AboutYouStepId, AboutYouStepConfig> = {
       ),
     },
   },
+
+  "adult-conditions": {
+    heading: "Do any of these apply to you?",
+    fields: ["adultConditions"],
+    schema: {
+      adultConditions: all(minSelected(1, "Select all that apply, or None of these"), noneAlone),
+    },
+  },
 };
+
+export const ADULT_CONDITION_IDS = Object.keys(ADULT_CONDITIONS) as AdultCondition[];
+
+/** The Adult conditions that apply, without "none". */
+export function adultConditionsFrom(answers: AboutYouAnswers): AdultCondition[] {
+  return (answers.adultConditions ?? []).filter((c): c is AdultCondition =>
+    ADULT_CONDITION_IDS.includes(c as AdultCondition),
+  );
+}
 
 export const ABOUT_YOU_STEP_IDS = Object.keys(ABOUT_YOU_STEPS) as AboutYouStepId[];
 

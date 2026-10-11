@@ -3,6 +3,8 @@ import {
   incomeLimit,
   familyIncome,
   isWithinLimit,
+  assess,
+  describeHousehold,
   SOURCES,
   CHECKED_ON,
   PER_ADDITIONAL_CHILD,
@@ -95,5 +97,54 @@ describe("sources", () => {
       expect(source.url).toMatch(/^https:\/\/www\.alberta\.ca\//);
       expect(source.checkedOn).toBe(CHECKED_ON);
     }
+  });
+});
+
+describe("assess", () => {
+  const singleParent = { hasPartner: false, children: 1 };
+
+  it("says a family within the limit may qualify for the Child Health Benefit", () => {
+    const [child] = assess(singleParent, 26_000, []);
+    expect(child.program).toBe("child");
+    expect(child.mayQualify).toBe(true);
+    expect(child.reasons[0]).toBe(
+      "Your family income of $26,000 is within the limit of $26,023 for a single adult with 1 child.",
+    );
+  });
+
+  it("says a family above the limit may not qualify for the Child Health Benefit", () => {
+    const couple = { hasPartner: true, children: 2 };
+    const [child] = assess(couple, 40_000, []);
+    expect(child.program).toBe("child");
+    expect(child.mayQualify).toBe(false);
+  });
+
+  it("doesn't offer the Child Health Benefit to a household without children", () => {
+    const [child] = assess({ hasPartner: false, children: 0 }, 10_000, []);
+    expect(child.mayQualify).toBe(false);
+  });
+
+  it("needs one of the Adult conditions for the Adult Health Benefit, however low the income", () => {
+    const [, adult] = assess({ hasPartner: false, children: 0 }, 10_000, []);
+    expect(adult.mayQualify).toBe(false);
+  });
+
+  it("uses the adult limit when a condition applies", () => {
+    const [, adult] = assess({ hasPartner: false, children: 0 }, 16_580, ["pregnant"]);
+    expect(adult.mayQualify).toBe(true);
+    const [, over] = assess({ hasPartner: false, children: 0 }, 16_581, ["pregnant"]);
+    expect(over.mayQualify).toBe(false);
+  });
+
+  it("can find both programs at once", () => {
+    const results = assess(singleParent, 20_000, ["drug-needs"]);
+    expect(results.map((r) => r.mayQualify)).toEqual([true, true]);
+  });
+});
+
+describe("describeHousehold", () => {
+  it("describes the household in plain words", () => {
+    expect(describeHousehold({ hasPartner: true, children: 0 })).toBe("a couple with no children");
+    expect(describeHousehold({ hasPartner: false, children: 3 })).toBe("a single adult with 3 children");
   });
 });

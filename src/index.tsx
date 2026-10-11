@@ -14,6 +14,7 @@ import { IncomeSection } from "./sections/income/pages";
 import { NotEligible } from "./sections/eligibility/not-eligible";
 import { EditableOnly, UnlockedOnly } from "./routes/guards";
 import { ReviewPage } from "./routes/review-page";
+import { ResultPage } from "./routes/result-page";
 import { ConfirmationPage } from "./routes/confirmation-page";
 
 import "./index.css";
@@ -44,6 +45,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               </Route>
 
               <Route path="review" element={<ReviewPage />} />
+              <Route path="result" element={<ResultPage />} />
             </Route>
 
             {/* Outside the group: the two pages that are the end of a road. */}

@@ -23,6 +23,7 @@ const passedScreener: FormState["eligibility"] = {
 const completeAboutYou: FormState["aboutYou"] = {
   hasPartner: "yes",
   children: "2",
+  adultConditions: ["none"],
 };
 
 const completeIncome: FormState["income"] = {
@@ -116,13 +117,13 @@ describe("section progress", () => {
     const { partnerNetIncome: _omit, ...withoutPartner } = completeIncome;
     const single = state({
       eligibility: passedScreener,
-      aboutYou: { hasPartner: "no", children: "1" },
+      aboutYou: { hasPartner: "no", children: "1", adultConditions: ["none"] },
       income: withoutPartner,
       confirmed: ["income"],
     });
     expect(sectionStatus(sectionById("income"), single)).toBe("completed");
 
-    const couple = state({ ...single, aboutYou: { hasPartner: "yes", children: "1" } });
+    const couple = state({ ...single, aboutYou: { hasPartner: "yes", children: "1", adultConditions: ["none"] } });
     expect(sectionStatus(sectionById("income"), couple)).toBe("in-progress");
   });
 });
@@ -157,14 +158,14 @@ describe("confirming a task", () => {
   it("survives a change that reopens a question, without re-confirming", () => {
     const finished = state({
       eligibility: passedScreener,
-      aboutYou: { hasPartner: "no", children: "1" },
+      aboutYou: { hasPartner: "no", children: "1", adultConditions: ["none"] },
       income: completeIncome,
       confirmed: ["income"],
     });
     expect(sectionStatus(sectionById("income"), finished)).toBe("completed");
 
     // Saying there is a partner opens their income question
-    const reopened = state({ ...finished, aboutYou: { hasPartner: "yes", children: "1" }, income: { ...completeIncome, partnerNetIncome: undefined } });
+    const reopened = state({ ...finished, aboutYou: { hasPartner: "yes", children: "1", adultConditions: ["none"] }, income: { ...completeIncome, partnerNetIncome: undefined } });
     expect(sectionStatus(sectionById("income"), reopened)).toBe("in-progress");
 
     const reanswered = state({ ...reopened, income: completeIncome });
