@@ -1,23 +1,14 @@
 import type { AboutYouAnswers } from "../../lib/form-state";
-import {
-  all,
-  dateInThePast,
-  optional,
-  pattern,
-  required,
-  runSchema,
-  type Rule,
-  type Schema,
-} from "../../lib/validation";
+import type { Household } from "../../lib/health-benefits";
+import { all, pattern, required, runSchema, type Schema } from "../../lib/validation";
 
 /**
- * The About you section: four pages, in order, no branching. An ordered array rather
- * than a graph like src/sections/eligibility/rules.ts, because nothing here branches. Two questions
- * share a page only when you need both in mind to answer either; the page-splitting
- * rule is in docs/design-notes.md.
+ * Your household: who the income limit is for. Two pages, in order, no branching. Only
+ * what the rules use is asked: whether there is a partner and how many children, never
+ * names or dates of birth (privacy by design; see src/lib/health-benefits.ts).
  */
 
-export type AboutYouStepId = "name" | "date-of-birth" | "contact" | "address";
+export type AboutYouStepId = "partner" | "children";
 
 export type AboutYouField = keyof AboutYouAnswers;
 
@@ -28,72 +19,25 @@ export type AboutYouStepConfig = {
   schema: Schema;
 };
 
-/*
- * No "not a real date" rule, deliberately: the date control reports missing, partial
- * and impossible dates as the same empty value, so such a rule could never run.
- */
-
-/**
- * Ten digits, or eleven starting with a country code. Spaces, dashes, brackets and a
- * leading +1 are how people write phone numbers, not errors.
- */
-const phoneNumber: Rule = (v) => {
-  const digits = (typeof v === "string" ? v : "").replace(/\D/g, "");
-  const valid = digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
-  return valid ? null : "Enter a phone number in the correct format, like 780 123 4567";
-};
-
-const POSTAL_CODE = /^[A-Za-z]\d[A-Za-z]\s?\d[A-Za-z]\d$/;
-
-/** Deliberately loose. The only way to know an address is deliverable is to send to it. */
-const EMAIL = /^\S+@\S+\.\S+$/;
+/** A whole number of children, as typed: up to two digits, no signs or decimals. */
+const WHOLE_NUMBER = /^\d{1,2}$/;
 
 export const ABOUT_YOU_STEPS: Record<AboutYouStepId, AboutYouStepConfig> = {
-  name: {
-    heading: "What is your name?",
-    fields: ["firstName", "lastName"],
+  partner: {
+    heading: "Do you have a spouse or common-law partner?",
+    fields: ["hasPartner"],
     schema: {
-      firstName: required("Enter your first name"),
-      lastName: required("Enter your last name"),
+      hasPartner: required("Select yes if you have a spouse or common-law partner"),
     },
   },
 
-  "date-of-birth": {
-    heading: "What is your date of birth?",
-    fields: ["dateOfBirth"],
+  children: {
+    heading: "How many children are in your household?",
+    fields: ["children"],
     schema: {
-      dateOfBirth: all(
-        required("Enter your date of birth"),
-        dateInThePast("Date of birth must be in the past"),
-      ),
-    },
-  },
-
-  contact: {
-    heading: "How can we contact you?",
-    fields: ["phone", "email"],
-    schema: {
-      phone: all(required("Enter your phone number"), phoneNumber),
-      // Optional, but a typo'd email nobody had to give is worse than none.
-      email: optional(
-        pattern(
-          EMAIL,
-          "Enter an email address in the correct format, like name@example.com",
-        ),
-      ),
-    },
-  },
-
-  address: {
-    heading: "What is your address?",
-    fields: ["street", "suite", "city", "province", "postalCode"],
-    schema: {
-      street: required("Enter your street address"),
-      city: required("Enter your city or town"),
-      province: required("Select your province or territory"),
-      postalCode: all(
-        required("Enter your postal code"),
-        pattern(POSTAL_CODE, "Enter a postal code in the correct format, like T3R 8Y2"),
+      children: all(
+        required("Enter the number of children, or 0 if there are none"),
+        pattern(WHOLE_NUMBER, "Enter the number of children as a whole number, like 0, 1 or 2"),
       ),
     },
   },
@@ -119,20 +63,17 @@ export const previousStep = (from: AboutYouStepId): AboutYouStepId | null =>
 export const isStepComplete = (id: AboutYouStepId, answers: AboutYouAnswers): boolean =>
   runSchema(ABOUT_YOU_STEPS[id].schema, answers as Record<string, unknown>).length === 0;
 
-/**
- * The first page still needing work, or null when the section is finished. Null
- * rather than a fallback page: the caller sends a finished section to its check page.
- */
+/** The first page still needing work, or null when the section is finished. */
 export function firstIncompleteStep(answers: AboutYouAnswers): AboutYouStepId | null {
   return ABOUT_YOU_STEP_IDS.find((id) => !isStepComplete(id, answers)) ?? null;
 }
 
-/**
- * Which page an answer is changed on, for the review page's Change links. Derived
- * from the same `fields` lists the pages use, so the review page has no diverging copy.
- */
-export function stepForField(field: AboutYouField): AboutYouStepId | null {
-  return (
-    ABOUT_YOU_STEP_IDS.find((id) => ABOUT_YOU_STEPS[id].fields.includes(field)) ?? null
-  );
+/** Every page's rules pass. */
+export const isHouseholdComplete = (answers: AboutYouAnswers): boolean =>
+  firstIncompleteStep(answers) === null;
+
+/** The household the income limits use, or null until both questions are answered. */
+export function householdFrom(answers: AboutYouAnswers): Household | null {
+  if (!isHouseholdComplete(answers)) return null;
+  return { hasPartner: answers.hasPartner === "yes", children: Number(answers.children) };
 }

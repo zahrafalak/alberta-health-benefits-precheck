@@ -1,6 +1,6 @@
 import type { FormState, SectionId } from "./form-state";
 import { screenerOutcome } from "../sections/eligibility/rules";
-import { childrenComplete } from "../sections/your-children/rules";
+import { isHouseholdComplete } from "../sections/about-you/rules";
 
 /**
  * What this service asks for, as a list, and what counts as having finished each part.
@@ -53,36 +53,12 @@ export const SECTIONS: Section[] = [
   },
   {
     id: "about-you",
-    title: "About you",
+    title: "Your household",
     group: "Your application",
     route: "/about-you",
     isUnlocked: screenerPassed,
-    isAnswered: (s) => {
-      const a = s.aboutYou;
-      return (
-        hasText(a.firstName) &&
-        hasText(a.lastName) &&
-        hasText(a.dateOfBirth) &&
-        hasText(a.phone) &&
-        hasText(a.street) &&
-        hasText(a.city) &&
-        hasText(a.province) &&
-        hasText(a.postalCode)
-      );
-    },
+    isAnswered: (s) => isHouseholdComplete(s.aboutYou),
     isStarted: (s) => Object.values(s.aboutYou).some((v) => hasText(v as string)),
-    hasCheckPage: true,
-  },
-  {
-    id: "your-children",
-    title: "Your children",
-    group: "Your application",
-    route: "/your-children",
-    isUnlocked: screenerPassed,
-    // Not a count: adding a child creates the record immediately. See src/sections/your-children/rules.ts.
-    isAnswered: (s) => childrenComplete(s.children),
-    isStarted: (s) => s.children.length > 0,
-    // The list is this task's check page; its Continue records the confirmation.
     hasCheckPage: true,
   },
   {

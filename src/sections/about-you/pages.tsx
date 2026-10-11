@@ -1,11 +1,10 @@
 import { useState, type ReactElement } from "react";
 import { Navigate, Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import {
-  GoabDatePicker,
-  GoabDropdown,
-  GoabDropdownItem,
   GoabFormItem,
   GoabInput,
+  GoabRadioGroup,
+  GoabRadioItem,
 } from "@abgov/react-components";
 import { PublicFormLayout } from "../../components/public-form-layout";
 import { TaskReview } from "../../components/task-review";
@@ -31,9 +30,8 @@ import {
 import { useForm } from "../../store/form-store";
 
 /**
- * About you: name, date of birth, contact, address. Four hand-written pages rather than
- * one page driven from config, unlike the screener: these are four different controls,
- * and a renderer for all of them would be more machinery than the pages it replaced.
+ * Your household: a partner, and how many children. Two hand-written pages rather than
+ * one page driven from config: they are two different controls.
  */
 
 const SECTION_ROOT = "/about-you";
@@ -49,22 +47,6 @@ const SUPPORTED = ["review", "task"] as const;
 
 const stepPath = (step: AboutYouStepId, returnTo: ReturnTo | null) =>
   withReturnTo(`${SECTION_ROOT}/${step}`, returnTo);
-
-const PROVINCES: ReadonlyArray<[string, string]> = [
-  ["AB", "Alberta"],
-  ["BC", "British Columbia"],
-  ["MB", "Manitoba"],
-  ["NB", "New Brunswick"],
-  ["NL", "Newfoundland and Labrador"],
-  ["NS", "Nova Scotia"],
-  ["NT", "Northwest Territories"],
-  ["NU", "Nunavut"],
-  ["ON", "Ontario"],
-  ["PE", "Prince Edward Island"],
-  ["QC", "Quebec"],
-  ["SK", "Saskatchewan"],
-  ["YT", "Yukon"],
-];
 
 /**
  * A draft seeded from the store, validated on submit. Answers reach the store only on a
@@ -127,7 +109,7 @@ function useStep(step: AboutYouStepId) {
   };
 }
 
-function NamePage() {
+function PartnerPage() {
   const {
     heading,
     draft,
@@ -138,61 +120,7 @@ function NamePage() {
     back,
     backLabel,
     continueLabel,
-  } = useStep("name");
-
-  return (
-    <PublicFormLayout back={back} backLabel={backLabel}>
-      <FormSet
-        heading={heading}
-        continueLabel={continueLabel}
-        onContinue={handleContinue}
-        errors={errors}
-      >
-        {/*
-          autoComplete tokens on every field about the applicant, here and on the three
-          pages below: WCAG 2.2 AA 1.3.5, and without them Chrome guesses these name
-          fields as payment fields.
-        */}
-        <GoabFormItem label="First name" id="firstName" error={errorFor("firstName")}>
-          <GoabInput
-            name="firstName"
-            ariaLabel="First name"
-            autoComplete="given-name"
-            width="100%"
-            value={draft.firstName ?? ""}
-            error={Boolean(errorFor("firstName"))}
-            onChange={(detail) => set("firstName")(String(detail.value))}
-          />
-        </GoabFormItem>
-
-        <GoabFormItem label="Last name" id="lastName" error={errorFor("lastName")} mt="l">
-          <GoabInput
-            name="lastName"
-            ariaLabel="Last name"
-            autoComplete="family-name"
-            width="100%"
-            value={draft.lastName ?? ""}
-            error={Boolean(errorFor("lastName"))}
-            onChange={(detail) => set("lastName")(String(detail.value))}
-          />
-        </GoabFormItem>
-      </FormSet>
-    </PublicFormLayout>
-  );
-}
-
-function DateOfBirthPage() {
-  const {
-    heading,
-    draft,
-    set,
-    errors,
-    errorFor,
-    handleContinue,
-    back,
-    backLabel,
-    continueLabel,
-  } = useStep("date-of-birth");
+  } = useStep("partner");
 
   return (
     <PublicFormLayout back={back} backLabel={backLabel}>
@@ -203,190 +131,62 @@ function DateOfBirthPage() {
         onContinue={handleContinue}
         errors={errors}
       >
-        <GoabFormItem id="dateOfBirth" error={errorFor("dateOfBirth")}>
-          {/*
-            type="input", not the calendar: a birth date is recalled, not picked. No
-            `max`, because clamping would hide the mistake instead of saying it. And
-            GoabDatePicker takes no ariaLabel and names its inner fields nothing, so the
-            h1 is the only place the question reaches a screen reader.
-          */}
-          <GoabDatePicker
-            name="dateOfBirth"
-            type="input"
-            value={draft.dateOfBirth || undefined}
-            error={Boolean(errorFor("dateOfBirth"))}
-            onChange={(detail) => set("dateOfBirth")(detail.valueStr ?? "")}
-          />
-        </GoabFormItem>
-      </FormSet>
-    </PublicFormLayout>
-  );
-}
-
-function ContactPage() {
-  const {
-    heading,
-    draft,
-    set,
-    errors,
-    errorFor,
-    handleContinue,
-    back,
-    backLabel,
-    continueLabel,
-  } = useStep("contact");
-
-  return (
-    <PublicFormLayout back={back} backLabel={backLabel}>
-      <FormSet
-        heading={heading}
-        continueLabel={continueLabel}
-        onContinue={handleContinue}
-        errors={errors}
-      >
         <GoabFormItem
-          label="Phone number"
-          id="phone"
-          helpText="Include the area code"
-          error={errorFor("phone")}
+          id="hasPartner"
+          type="radio-group"
+          helpText="A common-law partner is someone you've lived with in a marriage-like relationship."
+          error={errorFor("hasPartner")}
         >
-          <GoabInput
-            name="phone"
-            type="tel"
-            ariaLabel="Phone number"
-            autoComplete="tel"
-            width="320px"
-            value={draft.phone ?? ""}
-            error={Boolean(errorFor("phone"))}
-            onChange={(detail) => set("phone")(String(detail.value))}
-          />
-        </GoabFormItem>
-
-        {/* The only optional field, so the only one marked: people assume everything is
-            required unless told otherwise. */}
-        <GoabFormItem
-          label="Email address"
-          id="email"
-          requirement="optional"
-          error={errorFor("email")}
-          mt="l"
-        >
-          <GoabInput
-            name="email"
-            type="email"
-            ariaLabel="Email address"
-            autoComplete="email"
-            width="100%"
-            value={draft.email ?? ""}
-            error={Boolean(errorFor("email"))}
-            onChange={(detail) => set("email")(String(detail.value))}
-          />
-        </GoabFormItem>
-      </FormSet>
-    </PublicFormLayout>
-  );
-}
-
-function AddressPage() {
-  const {
-    heading,
-    draft,
-    set,
-    errors,
-    errorFor,
-    handleContinue,
-    back,
-    backLabel,
-    continueLabel,
-  } = useStep("address");
-
-  return (
-    <PublicFormLayout back={back} backLabel={backLabel}>
-      <FormSet
-        heading={heading}
-        continueLabel={continueLabel}
-        onContinue={handleContinue}
-        errors={errors}
-      >
-        <GoabFormItem label="Street address" id="street" error={errorFor("street")}>
-          <GoabInput
-            name="street"
-            ariaLabel="Street address"
-            autoComplete="address-line1"
-            width="100%"
-            value={draft.street ?? ""}
-            error={Boolean(errorFor("street"))}
-            onChange={(detail) => set("street")(String(detail.value))}
-          />
-        </GoabFormItem>
-
-        <GoabFormItem
-          label="Suite or unit number"
-          id="suite"
-          requirement="optional"
-          mt="l"
-        >
-          <GoabInput
-            name="suite"
-            ariaLabel="Suite or unit number"
-            autoComplete="address-line2"
-            width="160px"
-            value={draft.suite ?? ""}
-            onChange={(detail) => set("suite")(String(detail.value))}
-          />
-        </GoabFormItem>
-
-        <GoabFormItem label="City or town" id="city" error={errorFor("city")} mt="l">
-          <GoabInput
-            name="city"
-            ariaLabel="City or town"
-            autoComplete="address-level2"
-            width="100%"
-            value={draft.city ?? ""}
-            error={Boolean(errorFor("city"))}
-            onChange={(detail) => set("city")(String(detail.value))}
-          />
-        </GoabFormItem>
-
-        {/* Province and postal code stack rather than share a row: the error summary
-            jumps through fields in order. Each is sized to what it holds. */}
-        <GoabFormItem
-          label="Province or territory"
-          id="province"
-          error={errorFor("province")}
-          mt="l"
-        >
-          <GoabDropdown
-            name="province"
-            ariaLabel="Province or territory"
-            // No autoComplete: GoabDropdown accepts the prop and ignores it (a custom
-            // combobox with autocomplete="off" inside its shadow root), so this field
-            // cannot join the address autofill the others support.
-            width="320px"
-            value={draft.province ?? ""}
-            error={Boolean(errorFor("province"))}
-            onChange={(detail) => set("province")(detail.value ?? "")}
+          <GoabRadioGroup
+            name="hasPartner"
+            ariaLabel={heading}
+            value={draft.hasPartner ?? ""}
+            error={Boolean(errorFor("hasPartner"))}
+            onChange={(detail) => set("hasPartner")(String(detail.value))}
           >
-            {PROVINCES.map(([value, label]) => (
-              <GoabDropdownItem key={value} value={value} label={label} />
-            ))}
-          </GoabDropdown>
+            <GoabRadioItem value="yes" label="Yes" />
+            <GoabRadioItem value="no" label="No" />
+          </GoabRadioGroup>
         </GoabFormItem>
+      </FormSet>
+    </PublicFormLayout>
+  );
+}
 
+function ChildrenPage() {
+  const {
+    heading,
+    draft,
+    set,
+    errors,
+    errorFor,
+    handleContinue,
+    back,
+    backLabel,
+    continueLabel,
+  } = useStep("children");
+
+  return (
+    <PublicFormLayout back={back} backLabel={backLabel}>
+      <FormSet
+        heading={heading}
+        continueLabel={continueLabel}
+        onContinue={handleContinue}
+        errors={errors}
+      >
+        {/* Who counts, from the program pages: under 18, or 18 and 19 at home and in high school. */}
         <GoabFormItem
-          label="Postal code"
-          id="postalCode"
-          error={errorFor("postalCode")}
-          mt="l"
+          id="children"
+          helpText="Count children under 18, and children who are 18 or 19, live at home and attend high school. Enter 0 if there are none."
+          error={errorFor("children")}
         >
           <GoabInput
-            name="postalCode"
-            ariaLabel="Postal code"
-            autoComplete="postal-code"
-            width="160px"
-            value={draft.postalCode ?? ""}
-            error={Boolean(errorFor("postalCode"))}
-            onChange={(detail) => set("postalCode")(String(detail.value))}
+            name="children"
+            ariaLabel={heading}
+            width="80px"
+            value={draft.children ?? ""}
+            error={Boolean(errorFor("children"))}
+            onChange={(detail) => set("children")(String(detail.value).trim())}
           />
         </GoabFormItem>
       </FormSet>
@@ -410,10 +210,8 @@ function SectionEntry() {
 
 /** Typed over every step id, so adding a step fails the build until it has a page. A lookup, not a renderer. */
 const PAGES: Record<AboutYouStepId, () => ReactElement> = {
-  name: NamePage,
-  "date-of-birth": DateOfBirthPage,
-  contact: ContactPage,
-  address: AddressPage,
+  partner: PartnerPage,
+  children: ChildrenPage,
 };
 
 export function AboutYouSection() {

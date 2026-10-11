@@ -64,7 +64,7 @@ src/
                 Nothing in here or in a section's rules imports React, the
                 router, or the design system, and a test enforces that.
   components/   Shared pieces the pages are built from: the page layout, the
-                form set, the summary trio, the error summary, the item list,
+                form set, the summary trio, the error summary,
                 and the shell every task's check answers page is built on.
   routes/       The pages that span sections: the task list, the review and
                 confirmation pages, and the route guards.
