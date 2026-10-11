@@ -1,3 +1,14 @@
+/**
+ * Tests for the health benefit rules in health-benefits.ts.
+ *
+ * How to read a test:
+ *   describe("...")  a group of tests about one function
+ *   it("...")        one test; the text says what should happen
+ *   expect(x).toBe(y)  the check: x must equal y, or the test fails
+ *
+ * Every number here comes from the alberta.ca program pages (see SOURCES).
+ * Run them with: npm test
+ */
 import { describe, it, expect } from "vitest";
 import {
   incomeLimit,
@@ -11,6 +22,8 @@ import {
   type IncomeAnswers,
 } from "./health-benefits";
 
+// A household with every amount at 0. Tests copy it and change only the amount they're
+// testing, written { ...noIncome, yourNetIncome: 18_000 } ("noIncome, but with...").
 const noIncome: IncomeAnswers = {
   yourNetIncome: 0,
   partnerNetIncome: 0,
@@ -19,8 +32,10 @@ const noIncome: IncomeAnswers = {
   annualDrugCosts: 0,
 };
 
+// incomeLimit(program, household): the maximum family income for that household.
 describe("incomeLimit", () => {
-  // Every row of the "Income guidelines" tables on alberta.ca, checked on CHECKED_ON
+  // Every row of the "Income guidelines" tables on alberta.ca, checked on CHECKED_ON.
+  // it.each runs the same test once per row: [has a partner?, number of children, expected limit].
   it.each([
     [false, 0, 16_580],
     [false, 1, 26_023],
@@ -36,46 +51,61 @@ describe("incomeLimit", () => {
     expect(incomeLimit("adult", { hasPartner, children })).toBe(expected);
   });
 
+  // Both programs publish the same limits for households with children.
   it("uses the same limits for the child benefit when there are children", () => {
     expect(incomeLimit("child", { hasPartner: false, children: 2 })).toBe(31_010);
     expect(incomeLimit("child", { hasPartner: true, children: 4 })).toBe(46_932);
   });
 
+  // No children means the Child Health Benefit doesn't apply, so there's no limit (null).
   it("doesn't apply the child benefit to a household without children", () => {
     expect(incomeLimit("child", { hasPartner: true, children: 0 })).toBeNull();
   });
 
+  // The tables stop at 4 children; the pages say to add $4,973 for each extra child.
   it("adds the published amount for each child beyond four", () => {
     expect(PER_ADDITIONAL_CHILD).toBe(4_973);
     expect(incomeLimit("child", { hasPartner: false, children: 5 })).toBe(41_957 + 4_973);
     expect(incomeLimit("adult", { hasPartner: true, children: 7 })).toBe(46_932 + 3 * 4_973);
   });
 
+  // A bad number of children is a programming mistake, so the function refuses it.
+  // toThrow checks that calling it stops with an error instead of returning a wrong limit.
   it("rejects a number of children that isn't a whole number of 0 or more", () => {
     expect(() => incomeLimit("adult", { hasPartner: false, children: -1 })).toThrow(RangeError);
     expect(() => incomeLimit("adult", { hasPartner: false, children: 1.5 })).toThrow(RangeError);
   });
 });
 
+// familyIncome(answers): the program's "calculated income", following the five steps
+// under "How to calculate your income" on the program pages.
 describe("familyIncome", () => {
+  // Step 1: your Line 23600 plus your partner's.
   it("adds both partners' net income (Line 23600)", () => {
     expect(familyIncome({ ...noIncome, yourNetIncome: 18_000, partnerNetIncome: 9_500 })).toBe(27_500);
   });
 
+  // Steps 2 to 4: support payments (Line 12799) minus their taxable part (Line 12800),
+  // added on. Here: 20,000 + (6,000 - 4,000) = 22,000.
   it("adds only the non-taxable part of support payments (Line 12799 minus Line 12800)", () => {
     const answers = { ...noIncome, yourNetIncome: 20_000, supportPayments: 6_000, taxableSupportPayments: 4_000 };
     expect(familyIncome(answers)).toBe(22_000);
   });
 
+  // Step 5: subtract total annual drug costs. Here: 30,000 - 2,500 = 27,500.
   it("subtracts annual drug costs", () => {
     expect(familyIncome({ ...noIncome, yourNetIncome: 30_000, annualDrugCosts: 2_500 })).toBe(27_500);
   });
 
+  // "If it's less than zero, use 0 instead." Here 1,000 - 5,000 would be -4,000.
   it("never goes below zero", () => {
     expect(familyIncome({ ...noIncome, yourNetIncome: 1_000, annualDrugCosts: 5_000 })).toBe(0);
   });
 });
 
+// isWithinLimit(income, limit): true when the income is at or under the limit.
+// Boundary tests (written by Falak): the edge is where a one-character mistake (< instead
+// of <=) would turn away a family whose income is exactly the limit.
 describe("isWithinLimit", () => {
   // The pages give a "maximum income": someone exactly at the limit is within it
   it("is within the limit at exactly the limit", () => {
@@ -91,20 +121,29 @@ describe("isWithinLimit", () => {
   });
 });
 
+// Every rule must say where it came from and when it was checked.
 describe("sources", () => {
   it("names an alberta.ca page and the date checked for each program", () => {
+    // Loops over both programs (child and adult) and checks each one's source.
     for (const source of Object.values(SOURCES)) {
-      expect(source.url).toMatch(/^https:\/\/www\.alberta\.ca\//);
+      expect(source.url).toMatch(/^https:\/\/www\.alberta\.ca\//); // the address starts with alberta.ca
       expect(source.checkedOn).toBe(CHECKED_ON);
     }
   });
 });
 
+// assess(household, income, adultConditions): the result for each program.
+// It returns two results in order, [child, adult], each with:
+//   program     "child" or "adult"
+//   mayQualify  true or false
+//   reasons     the plain-language explanation shown on the result page
 describe("assess", () => {
+  // A household shared by two tests below: one adult, one child.
   const singleParent = { hasPartner: false, children: 1 };
 
+  // $26,000 is under this household's limit of $26,023.
   it("says a family within the limit may qualify for the Child Health Benefit", () => {
-    const [child] = assess(singleParent, 26_000, []);
+    const [child] = assess(singleParent, 26_000, []); // [child] keeps the first result
     expect(child.program).toBe("child");
     expect(child.mayQualify).toBe(true);
     expect(child.reasons[0]).toBe(
@@ -112,23 +151,30 @@ describe("assess", () => {
     );
   });
 
+  // Written by Falak. A couple with 2 children has a limit of $36,634, and $40,000 is above
+  // it. This is the test that fails if the Child result ever stops checking income.
   it("says a family above the limit may not qualify for the Child Health Benefit", () => {
-    const couple = { hasPartner: true, children: 2 };
-    const [child] = assess(couple, 40_000, []);
-    expect(child.program).toBe("child");
-    expect(child.mayQualify).toBe(false);
+    const couple = { hasPartner: true, children: 2 }; // two adults, two children
+    const [child] = assess(couple, 40_000, []); // [] means no Adult conditions apply
+    expect(child.program).toBe("child"); // make sure this is the Child result
+    expect(child.mayQualify).toBe(false); // over the limit, so may not qualify
   });
 
+  // The Child Health Benefit is for households with children, whatever the income.
   it("doesn't offer the Child Health Benefit to a household without children", () => {
     const [child] = assess({ hasPartner: false, children: 0 }, 10_000, []);
     expect(child.mayQualify).toBe(false);
   });
 
+  // The Adult benefit also needs a condition (pregnant, high drug needs, leaving support).
+  // [, adult] skips the first result and keeps the second one, the Adult result.
   it("needs one of the Adult conditions for the Adult Health Benefit, however low the income", () => {
     const [, adult] = assess({ hasPartner: false, children: 0 }, 10_000, []);
     expect(adult.mayQualify).toBe(false);
   });
 
+  // A boundary test for the Adult limit: $16,580 for a single adult is the limit itself
+  // (within), and $16,581 is $1 over.
   it("uses the adult limit when a condition applies", () => {
     const [, adult] = assess({ hasPartner: false, children: 0 }, 16_580, ["pregnant"]);
     expect(adult.mayQualify).toBe(true);
@@ -136,12 +182,15 @@ describe("assess", () => {
     expect(over.mayQualify).toBe(false);
   });
 
+  // Someone can qualify for both: a parent with high drug needs, under the limit.
+  // .map picks mayQualify from each result, giving [child, adult].
   it("can find both programs at once", () => {
     const results = assess(singleParent, 20_000, ["drug-needs"]);
     expect(results.map((r) => r.mayQualify)).toEqual([true, true]);
   });
 });
 
+// describeHousehold(household): the words used in the result's reason.
 describe("describeHousehold", () => {
   it("describes the household in plain words", () => {
     expect(describeHousehold({ hasPartner: true, children: 0 })).toBe("a couple with no children");
