@@ -10,7 +10,7 @@ import { FormProvider } from "./store/form-store";
 import { TaskList } from "./routes/task-list";
 import { EligibilitySection } from "./sections/eligibility/pages";
 import { AboutYouSection } from "./sections/about-you/pages";
-import { DocumentsSection } from "./sections/documents/pages";
+import { IncomeSection } from "./sections/income/pages";
 import { NotEligible } from "./sections/eligibility/not-eligible";
 import { EditableOnly, UnlockedOnly } from "./routes/guards";
 import { ReviewPage } from "./routes/review-page";
@@ -40,7 +40,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<UnlockedOnly />}>
                 <Route path="eligibility/*" element={<EligibilitySection />} />
                 <Route path="about-you/*" element={<AboutYouSection />} />
-                <Route path="documents/*" element={<DocumentsSection />} />
+                <Route path="income/*" element={<IncomeSection />} />
               </Route>
 
               <Route path="review" element={<ReviewPage />} />

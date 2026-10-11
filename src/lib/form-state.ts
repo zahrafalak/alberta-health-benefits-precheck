@@ -6,7 +6,7 @@
 
 export type YesNo = "yes" | "no";
 
-export type SectionId = "eligibility" | "about-you" | "documents";
+export type SectionId = "eligibility" | "about-you" | "income";
 
 /** Screener answers. See src/sections/eligibility/rules.ts for how they branch. */
 export type EligibilityAnswers = {
@@ -22,24 +22,23 @@ export type AboutYouAnswers = {
   children?: string;
 };
 
-export type UploadedDocument = {
-  /** Generated on upload. Two files can share a name, so removal needs its own key. */
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-};
-
-export type DocumentAnswers = {
-  proofOfIncome: UploadedDocument[];
-  hasOtherIncome?: YesNo;
-  otherIncomeDetail?: string;
+/** Your income, as typed. See src/sections/income/rules.ts for how it is parsed. */
+export type IncomeAnswers = {
+  /** Line 23600 on your 2025 return. */
+  yourNetIncome?: string;
+  /** Line 23600 on your spouse's or partner's 2025 return. */
+  partnerNetIncome?: string;
+  /** Line 12799: support payments received. */
+  supportPayments?: string;
+  /** Line 12800: the taxable part of those payments. */
+  taxableSupportPayments?: string;
+  annualDrugCosts?: string;
 };
 
 export type FormState = {
   eligibility: EligibilityAnswers;
   aboutYou: AboutYouAnswers;
-  documents: DocumentAnswers;
+  income: IncomeAnswers;
   /**
    * ISO timestamp, set on submit. Non-null means no longer editable, enforced by the
    * guard in src/routes/guards.tsx that sends a submitted application to its confirmation.
@@ -62,7 +61,7 @@ export type FormState = {
 export const EMPTY_FORM: FormState = {
   eligibility: {},
   aboutYou: {},
-  documents: { proofOfIncome: [] },
+  income: {},
   submittedAt: null,
   confirmed: [],
   reference: null,
@@ -71,7 +70,7 @@ export const EMPTY_FORM: FormState = {
 export type FormAction =
   | { type: "save-eligibility"; answers: EligibilityAnswers }
   | { type: "save-about-you"; answers: AboutYouAnswers }
-  | { type: "save-documents"; answers: DocumentAnswers }
+  | { type: "save-income"; answers: IncomeAnswers }
   | { type: "confirm-section"; id: SectionId }
   | { type: "submit"; at: string; reference: string }
   | { type: "hydrate"; state: FormState }
@@ -87,9 +86,8 @@ export function formReducer(state: FormState, action: FormAction): FormState {
     case "save-about-you":
       return { ...state, aboutYou: { ...state.aboutYou, ...action.answers } };
 
-    case "save-documents":
-      // Replaces rather than merges, for the same reason as the screener.
-      return { ...state, documents: action.answers };
+    case "save-income":
+      return { ...state, income: { ...state.income, ...action.answers } };
 
     case "confirm-section":
       return state.confirmed.includes(action.id)
