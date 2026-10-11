@@ -20,6 +20,8 @@ export type AboutYouAnswers = {
   hasPartner?: YesNo;
   /** Number of children, as typed; validated as a whole number before it is saved. */
   children?: string;
+  /** Which of the Adult Health Benefit's conditions apply, or ["none"]. */
+  adultConditions?: string[];
 };
 
 /** Your income, as typed. See src/sections/income/rules.ts for how it is parsed. */

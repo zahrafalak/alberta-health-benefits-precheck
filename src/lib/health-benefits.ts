@@ -97,3 +97,84 @@ export function familyIncome(answers: IncomeAnswers): number {
 export function isWithinLimit(income: number, limit: number): boolean {
   return income <= limit;
 }
+
+/**
+ * The Adult Health Benefit is for people who are pregnant, have high ongoing prescription
+ * drug needs, or are leaving Income Support or AISH because of income from employment,
+ * self-employment or CPP-D benefits (the Adult program page).
+ */
+export type AdultCondition = "pregnant" | "drug-needs" | "leaving-support";
+
+export const ADULT_CONDITIONS: Record<AdultCondition, string> = {
+  pregnant: "Pregnant",
+  "drug-needs": "High ongoing prescription drug needs",
+  "leaving-support":
+    "Leaving Income Support or AISH because of income from employment, self-employment or CPP-D benefits",
+};
+
+export type ProgramResult = {
+  program: Program;
+  mayQualify: boolean;
+  /** Plain-language reasons, shown to the person. */
+  reasons: string[];
+};
+
+/** "$22,500" */
+export const formatDollars = (amount: number): string =>
+  amount.toLocaleString("en-CA", { style: "currency", currency: "CAD", maximumFractionDigits: 0 });
+
+/** "a single adult with 2 children", "a couple with no children" */
+export function describeHousehold({ hasPartner, children }: Household): string {
+  const adults = hasPartner ? "a couple" : "a single adult";
+  const kids = children === 0 ? "no children" : children === 1 ? "1 child" : `${children} children`;
+  return `${adults} with ${kids}`;
+}
+
+function incomeReason(income: number, limit: number, household: Household): string {
+  return isWithinLimit(income, limit)
+    ? `Your family income of ${formatDollars(income)} is within the limit of ${formatDollars(limit)} for ${describeHousehold(household)}.`
+    : `Your family income of ${formatDollars(income)} is above the limit of ${formatDollars(limit)} for ${describeHousehold(household)}.`;
+}
+
+/**
+ * What the published rules say for each program, given the household, the family income
+ * from familyIncome(), and which Adult conditions apply. A pre-check, not a decision: the
+ * program decides using income the Canada Revenue Agency confirms.
+ */
+export function assess(
+  household: Household,
+  income: number,
+  adultConditions: AdultCondition[],
+): ProgramResult[] {
+  const childLimit = incomeLimit("child", household);
+  const child: ProgramResult =
+    childLimit === null
+      ? {
+          program: "child",
+          mayQualify: false,
+          reasons: ["The Child Health Benefit is for households with children."],
+        }
+      : {
+          program: "child",
+          mayQualify: isWithinLimit(income, childLimit),
+          reasons: [incomeReason(income, childLimit, household)],
+        };
+
+  const adultLimit = incomeLimit("adult", household) as number;
+  const adult: ProgramResult =
+    adultConditions.length === 0
+      ? {
+          program: "adult",
+          mayQualify: false,
+          reasons: [
+            "The Adult Health Benefit is for people who are pregnant, have high ongoing prescription drug needs, or are leaving Income Support or AISH because of income from work or CPP-D benefits.",
+          ],
+        }
+      : {
+          program: "adult",
+          mayQualify: isWithinLimit(income, adultLimit),
+          reasons: [incomeReason(income, adultLimit, household)],
+        };
+
+  return [child, adult];
+}

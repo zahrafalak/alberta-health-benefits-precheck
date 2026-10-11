@@ -42,23 +42,28 @@ export function ResultsPage({
 }
 
 /**
- * The contact block on every result page. The bracketed values are placeholders:
- * replace them with your service's real contact details before shipping.
+ * The contact block on every result page: the Health Benefits Contact Centre, from the
+ * "Contact" section of both program pages (src/lib/health-benefits.ts has the sources).
+ * The pages hide their email address behind a link, so it isn't copied here.
  */
 export function ResultContactSection() {
   return (
     <>
       <GoabText tag="h2" mt="xl" mb="s">
-        If you have questions about your application
-      </GoabText>
-      <GoabText mt="none" mb="s">
-        Contact the [program area].
+        Health Benefits Contact Centre
       </GoabText>
       <GoabText mt="none" mb="2xs">
-        <strong>Email:</strong> [email address]
+        <strong>Phone:</strong> 780-427-6848, toll-free 1-877-469-5437
+      </GoabText>
+      <GoabText mt="none" mb="2xs">
+        <strong>Fax:</strong> 780-415-8386, toll-free 1-855-415-8386
+      </GoabText>
+      <GoabText mt="none" mb="2xs">
+        <strong>Mail:</strong> Health Benefits Contact Centre, PO Box 2222 Station Main, Edmonton,
+        Alberta T5J 5H3
       </GoabText>
       <GoabText mt="none" mb="none">
-        <strong>Phone:</strong> [phone number]
+        For the email address, see the contact section of the program pages.
       </GoabText>
     </>
   );

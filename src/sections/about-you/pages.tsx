@@ -1,11 +1,14 @@
 import { useState, type ReactElement } from "react";
 import { Navigate, Route, Routes, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  GoabCheckbox,
+  GoabCheckboxList,
   GoabFormItem,
   GoabInput,
   GoabRadioGroup,
   GoabRadioItem,
 } from "@abgov/react-components";
+import { ADULT_CONDITIONS } from "../../lib/health-benefits";
 import { PublicFormLayout } from "../../components/public-form-layout";
 import { TaskReview } from "../../components/task-review";
 import { AboutYouSummary } from "./summary";
@@ -14,6 +17,7 @@ import { useFormValidation } from "../../components/use-form-validation";
 import {
   ABOUT_YOU_STEPS,
   ABOUT_YOU_STEP_IDS,
+  ADULT_CONDITION_IDS,
   firstIncompleteStep,
   nextStep,
   previousStep,
@@ -30,8 +34,8 @@ import {
 import { useForm } from "../../store/form-store";
 
 /**
- * Your household: a partner, and how many children. Two hand-written pages rather than
- * one page driven from config: they are two different controls.
+ * Your household: a partner, how many children, and the Adult Health Benefit's
+ * conditions. Hand-written pages rather than one driven from config: different controls.
  */
 
 const SECTION_ROOT = "/about-you";
@@ -69,7 +73,7 @@ function useStep(step: AboutYouStepId) {
 
   const { errors, submit, revalidate } = useFormValidation(config.schema);
 
-  const set = (field: AboutYouField) => (value: string) =>
+  const set = (field: AboutYouField) => (value: string | string[]) =>
     setDraft((prev) => {
       const next = { ...prev, [field]: value };
       revalidate(next as Record<string, unknown>);
@@ -194,6 +198,52 @@ function ChildrenPage() {
   );
 }
 
+function AdultConditionsPage() {
+  const {
+    heading,
+    draft,
+    set,
+    errors,
+    errorFor,
+    handleContinue,
+    back,
+    backLabel,
+    continueLabel,
+  } = useStep("adult-conditions");
+
+  return (
+    <PublicFormLayout back={back} backLabel={backLabel}>
+      <FormSet
+        heading={heading}
+        continueLabel={continueLabel}
+        onContinue={handleContinue}
+        errors={errors}
+      >
+        {/* From the Adult program page: who the Adult Health Benefit is for. */}
+        <GoabFormItem
+          id="adultConditions"
+          type="checkbox-list"
+          helpText="The Adult Health Benefit is for people in these situations. Include your spouse or partner if you have one. Select all that apply."
+          error={errorFor("adultConditions")}
+        >
+          <GoabCheckboxList
+            name="adultConditions"
+            value={draft.adultConditions ?? []}
+            error={Boolean(errorFor("adultConditions"))}
+            onChange={(detail) => set("adultConditions")(detail.value)}
+          >
+            {ADULT_CONDITION_IDS.map((id) => (
+              <GoabCheckbox key={id} id={`adultConditions-${id}`} name={id} text={ADULT_CONDITIONS[id]} />
+            ))}
+            {/* In a checkbox list, each box's name is the value it reports, so names must be unique. */}
+            <GoabCheckbox id="adultConditions-none" name="none" text="None of these" />
+          </GoabCheckboxList>
+        </GoabFormItem>
+      </FormSet>
+    </PublicFormLayout>
+  );
+}
+
 function CheckPage() {
   return (
     <TaskReview section="about-you">
@@ -212,6 +262,7 @@ function SectionEntry() {
 const PAGES: Record<AboutYouStepId, () => ReactElement> = {
   partner: PartnerPage,
   children: ChildrenPage,
+  "adult-conditions": AdultConditionsPage,
 };
 
 export function AboutYouSection() {

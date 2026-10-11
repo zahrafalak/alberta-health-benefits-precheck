@@ -132,7 +132,7 @@ export function TaskList() {
       <GoabCallout
         type={ready ? "success" : "information"}
         heading={
-          ready ? "Ready to submit" : `You have completed ${done} of ${total} sections`
+          ready ? "Ready to see your result" : `You have completed ${done} of ${total} sections`
         }
         mt="l"
         mb="xl"
