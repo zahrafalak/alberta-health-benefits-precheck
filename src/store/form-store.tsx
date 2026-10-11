@@ -15,8 +15,6 @@ import {
 } from "../lib/form-state";
 import { clearDraft, loadDraft, saveDraft } from "./persistence";
 import type { Receipt } from "./submission";
-// DEMO ONLY. Delete this import, the file it names, and the fallback below.
-import { DEMO_APPLICATION } from "../demo-application";
 
 /**
  * The application's answers, held in one place so the task list and the review page
@@ -41,10 +39,8 @@ export function FormProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     loadDraft().then((saved) => {
       if (cancelled) return;
-      // DEMO ONLY: the fallback, not the load. Delete `?? DEMO_APPLICATION` and a real
-      // service starts an unknown visitor on an empty form. Nothing saved is also what
-      // makes the demo reset reversible: clearing leaves nothing saved, so the sample returns.
-      dispatch({ type: "hydrate", state: saved ?? DEMO_APPLICATION });
+      // A visitor with nothing saved starts on an empty form.
+      dispatch({ type: "hydrate", state: saved ?? EMPTY_FORM });
       setHydrated(true);
     });
     return () => {
@@ -61,8 +57,8 @@ export function FormProvider({ children }: { children: ReactNode }) {
       canSave.current = true;
       return;
     }
-    // An untouched form is not a draft, and not saving it is what lets a cleared demo
-    // come back. `reset` returns the EMPTY_FORM object itself, so this identity check is exact.
+    // An untouched form is not a draft, so after "Clear my answers" nothing is saved.
+    // `reset` returns the EMPTY_FORM object itself, so this identity check is exact.
     if (state === EMPTY_FORM) return;
 
     void saveDraft(state);
