@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Must match SERVICE_NAME in src/lib/service.ts; scripts/readme.test.ts asserts it. -->
+    <title>[Service name]</title>
+    <!-- Vite rewrites this root-absolute path to the deploy's base path. It does not
+         rewrite paths inside files under public/. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- GoA components render icons with ionicons, loaded here rather than bundled. -->
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"
+    ></script>
+    <script
+      nomodule
+      src="https://cdn.jsdelivr.net/npm/ionicons@5.5.2/dist/ionicons/ionicons.js"
+    ></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>
