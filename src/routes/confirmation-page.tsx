@@ -31,7 +31,7 @@ export function ConfirmationPage() {
       statusBody="Keep this number. You will need it if you contact us about this application."
       actions={
         // A real service ends here, usually with a link back to Alberta.ca. This button
-        // exists so the demo can be run more than once; replace it rather than inherit it.
+        // exists so the pre-check can be run more than once; replace it rather than inherit it.
         <GoabButton type="secondary" onClick={startAgain}>
           Start a new application
         </GoabButton>

@@ -69,8 +69,6 @@ src/
   routes/       The pages that span sections: the task list, the review and
                 confirmation pages, and the route guards.
   store/        State, and the two seams a real service replaces.
-  demo-application.ts
-                The answers this demo starts with. Delete it.
 e2e/            Browser tests. Yours to delete.
 scripts/        Checks that keep this README honest.
 ```
@@ -99,17 +97,9 @@ The service's identity ships as a placeholder and its substance ships realistic.
 
 The reference number is generated in the browser so the confirmation page has something real on it. In your service it comes back from your backend.
 
-## The demo state, and removing it
+## Starting empty, and clearing answers
 
-This demo opens on a part-finished application, so the review, the submit and the confirmation are minutes away rather than twenty pages of typing. **Demo: clear answers (refresh restores)** in the header menu empties it, and refreshing brings the sample back.
-
-Removing it is three deletions, and the compiler finds the rest:
-
-- `src/demo-application.ts`
-- the import and the `?? DEMO_APPLICATION` fallback in `src/store/form-store.tsx`
-- the `Demo:` item and its handler in `src/App.tsx`
-
-Leave the rest of the store alone.
+A new visitor starts on an empty form. Answers are saved only in this browser as they are entered, so somebody can close the tab and come back. **Clear my answers** in the header removes them, for example on a shared computer.
 
 ## The two seams
 

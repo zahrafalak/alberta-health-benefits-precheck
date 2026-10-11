@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-/** One spec, deliberately: see e2e/smoke.spec.ts. */
+/** Browser tests live in e2e/; see e2e/smoke.spec.ts. */
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,

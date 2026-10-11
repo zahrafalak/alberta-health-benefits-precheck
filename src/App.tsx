@@ -3,14 +3,11 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   GoabOneColumnLayout,
   GoabAppHeader,
-  GoabMenuButton,
-  GoabMenuAction,
+  GoabButton,
   GoabAppFooter,
   GoabAppFooterMetaSection,
   GoabPageBlock,
 } from "@abgov/react-components";
-// The event detail type ships in ui-components-common, which is why that package is a dependency.
-import type { GoabMenuButtonOnActionDetail } from "@abgov/ui-components-common";
 
 import { SERVICE_NAME } from "./lib/service";
 import { useForm, startNewApplication } from "./store/form-store";
@@ -63,10 +60,8 @@ export function App() {
   const { dispatch } = useForm();
   const navigate = useNavigate();
 
-  // DEMO ONLY: delete this handler and the "Demo: clear answers" item below.
-  // Deliberately not wired to "Sign out": signing out of a real service keeps the draft.
-  async function handleMenuAction(detail: GoabMenuButtonOnActionDetail) {
-    if (detail.action !== "reset-demo") return;
+  // Answers live only in this browser; this removes them, for example on a shared device.
+  async function clearMyAnswers() {
     await startNewApplication(dispatch);
     navigate("/");
   }
@@ -76,20 +71,9 @@ export function App() {
       <section slot="header" ref={headerRef}>
         <GoabAppHeader url={home} heading={SERVICE_NAME} maxContentWidth="704px">
           <div slot="utilities">
-            <GoabMenuButton
-              text="Edna Mode"
-              type="tertiary"
-              size="compact"
-              onAction={handleMenuAction}
-            >
-              <GoabMenuAction text="My profile" action="profile" />
-              <GoabMenuAction text="Settings" action="settings" />
-              <GoabMenuAction text="Sign out" action="sign-out" />
-              <GoabMenuAction
-                text="Demo: clear answers (refresh restores)"
-                action="reset-demo"
-              />
-            </GoabMenuButton>
+            <GoabButton type="tertiary" size="compact" onClick={clearMyAnswers}>
+              Clear my answers
+            </GoabButton>
           </div>
         </GoabAppHeader>
       </section>
