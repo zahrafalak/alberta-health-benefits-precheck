@@ -3,7 +3,6 @@ import { EMPTY_FORM, type FormState } from "./form-state";
 import { STEP_IDS as ELIGIBILITY_STEP_IDS } from "../sections/eligibility/rules";
 import { ABOUT_YOU_STEP_IDS } from "../sections/about-you/rules";
 import { DOCUMENT_STEP_IDS } from "../sections/documents/rules";
-import { CHILD_STEP_IDS } from "../sections/your-children/rules";
 import {
   SECTIONS,
   sectionById,
@@ -22,14 +21,8 @@ const passedScreener: FormState["eligibility"] = {
 };
 
 const completeAboutYou: FormState["aboutYou"] = {
-  firstName: "Ada",
-  lastName: "Lovelace",
-  dateOfBirth: "1990-01-01",
-  phone: "7801234567",
-  street: "123 Main Street",
-  city: "Edmonton",
-  province: "Alberta",
-  postalCode: "T5J 2N9",
+  hasPartner: "yes",
+  children: "2",
 };
 
 const state = (over: Partial<FormState> = {}): FormState => ({ ...EMPTY_FORM, ...over });
@@ -37,7 +30,6 @@ const state = (over: Partial<FormState> = {}): FormState => ({ ...EMPTY_FORM, ..
 const ALL_CONFIRMED: FormState["confirmed"] = [
   "eligibility",
   "about-you",
-  "your-children",
   "documents",
 ];
 
@@ -48,14 +40,14 @@ describe("locking", () => {
 
   it("keeps the rest of the application shut until the screener passes", () => {
     const fresh = state();
-    for (const id of ["about-you", "your-children", "documents"] as const) {
+    for (const id of ["about-you", "documents"] as const) {
       expect(sectionStatus(sectionById(id), fresh)).toBe("cannot-start");
     }
   });
 
   it("opens the rest once the screener passes", () => {
     const passed = state({ eligibility: passedScreener });
-    for (const id of ["about-you", "your-children", "documents"] as const) {
+    for (const id of ["about-you", "documents"] as const) {
       expect(sectionStatus(sectionById(id), passed)).toBe("not-started");
     }
   });
@@ -97,10 +89,10 @@ describe("section progress", () => {
     ).toBe("completed");
   });
 
-  it("holds About you at in progress until every required answer is there", () => {
+  it("holds Your household at in progress until every required answer is there", () => {
     const partial = state({
       eligibility: passedScreener,
-      aboutYou: { firstName: "Ada", lastName: "Lovelace" },
+      aboutYou: { hasPartner: "yes" },
     });
     expect(sectionStatus(sectionById("about-you"), partial)).toBe("in-progress");
 
@@ -110,51 +102,6 @@ describe("section progress", () => {
       confirmed: ["about-you"],
     });
     expect(sectionStatus(sectionById("about-you"), complete)).toBe("completed");
-  });
-
-  it("holds Your children at in progress while a child is half added", () => {
-    // Adding a child creates the record straight away, so a row can still be
-    // unfinished work.
-    const halfAdded = state({
-      eligibility: passedScreener,
-      children: [
-        { id: "1", firstName: "Kit", lastName: "Lovelace", dateOfBirth: "2015-06-02" },
-      ],
-    });
-    expect(sectionStatus(sectionById("your-children"), halfAdded)).toBe("in-progress");
-  });
-
-  it("completes Your children once every child's own path is answered", () => {
-    const done = state({
-      eligibility: passedScreener,
-      children: [
-        {
-          id: "1",
-          firstName: "Kit",
-          lastName: "Lovelace",
-          dateOfBirth: "2015-06-02",
-          livesWithYou: "yes",
-        },
-      ],
-      confirmed: ["your-children"],
-    });
-    expect(sectionStatus(sectionById("your-children"), done)).toBe("completed");
-  });
-
-  it("does not need a living arrangement from a child who lives with you", () => {
-    const elsewhere = state({
-      eligibility: passedScreener,
-      children: [
-        {
-          id: "1",
-          firstName: "Kit",
-          lastName: "Lovelace",
-          dateOfBirth: "2015-06-02",
-          livesWithYou: "no",
-        },
-      ],
-    });
-    expect(sectionStatus(sectionById("your-children"), elsewhere)).toBe("in-progress");
   });
 
   it("needs the follow-up answered before Documents counts as done", () => {
@@ -212,7 +159,7 @@ describe("confirming a task", () => {
     // Confirming can only hold a task back, never carry one over the line.
     const half = state({
       eligibility: passedScreener,
-      aboutYou: { firstName: "Ada", lastName: "Lovelace" },
+      aboutYou: { hasPartner: "yes" },
       confirmed: ["about-you"],
     });
     expect(isConfirmed("about-you", half)).toBe(true);
@@ -257,15 +204,6 @@ describe("submitting", () => {
   const everything = state({
     eligibility: passedScreener,
     aboutYou: completeAboutYou,
-    children: [
-      {
-        id: "1",
-        firstName: "Kit",
-        lastName: "Lovelace",
-        dateOfBirth: "2015-06-02",
-        livesWithYou: "yes",
-      },
-    ],
     documents: {
       proofOfIncome: [
         { id: "1", name: "payslip.pdf", size: 1024, type: "application/pdf" },
@@ -280,7 +218,7 @@ describe("submitting", () => {
   });
 
   it("cannot submit with one section left", () => {
-    const nearly = state({ ...everything, children: [] });
+    const nearly = state({ ...everything, aboutYou: {} });
     expect(canSubmit(nearly)).toBe(false);
   });
 
@@ -291,7 +229,7 @@ describe("submitting", () => {
   it("cannot submit an application whose last task was never checked", () => {
     const unchecked = state({
       ...everything,
-      confirmed: ["eligibility", "about-you", "your-children"],
+      confirmed: ["eligibility", "about-you"],
     });
     expect(sectionById("documents").isAnswered(unchecked)).toBe(true);
     expect(canSubmit(unchecked)).toBe(false);
@@ -312,14 +250,13 @@ describe("submitting", () => {
     expect(incompleteSections(state()).map((s) => s.id)).toEqual([
       "eligibility",
       "about-you",
-      "your-children",
       "documents",
     ]);
   });
 
   it("names only the section that is actually unfinished", () => {
-    const nearly = state({ ...everything, children: [] });
-    expect(incompleteSections(nearly).map((s) => s.id)).toEqual(["your-children"]);
+    const nearly = state({ ...everything, aboutYou: {} });
+    expect(incompleteSections(nearly).map((s) => s.id)).toEqual(["about-you"]);
   });
 
   it("has nothing outstanding once the application is complete", () => {
@@ -334,7 +271,6 @@ describe("the check route", () => {
     expect(ELIGIBILITY_STEP_IDS).not.toContain("check");
     expect(ABOUT_YOU_STEP_IDS).not.toContain("check");
     expect(DOCUMENT_STEP_IDS).not.toContain("check");
-    expect(CHILD_STEP_IDS).not.toContain("check");
   });
 
   it("is expected by every task that has not opted out", () => {
@@ -342,7 +278,6 @@ describe("the check route", () => {
     expect(SECTIONS.filter((s) => s.hasCheckPage).map((s) => s.id)).toEqual([
       "eligibility",
       "about-you",
-      "your-children",
       "documents",
     ]);
   });

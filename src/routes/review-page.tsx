@@ -6,7 +6,6 @@ import { submitApplication } from "../store/submission";
 import { incompleteSections, sectionById, type SectionId } from "../lib/sections";
 import { EligibilitySummary } from "../sections/eligibility/summary";
 import { AboutYouSummary } from "../sections/about-you/summary";
-import { YourChildrenSummary } from "../sections/your-children/summary";
 import { DocumentsSummary } from "../sections/documents/summary";
 
 /**
@@ -77,7 +76,6 @@ export function ReviewPage() {
           into a section the person cannot open would contradict the task list. */}
       <EligibilitySummary returnTo="review" />
       {unlocked("about-you") && <AboutYouSummary returnTo="review" />}
-      {unlocked("your-children") && <YourChildrenSummary />}
       {unlocked("documents") && <DocumentsSummary returnTo="review" />}
 
       {ready && (

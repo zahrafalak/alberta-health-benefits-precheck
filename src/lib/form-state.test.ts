@@ -72,34 +72,3 @@ describe("saving a branching section", () => {
 
 });
 
-describe("children", () => {
-  const child = {
-    id: "c1",
-    firstName: "Ava",
-    lastName: "Chen",
-    dateOfBirth: "2018-03-12",
-    livesWithYou: "no" as const,
-    livingArrangement: "Their grandmother",
-  };
-
-  it("replaces a child wholesale, so a pruned answer does not survive the update", () => {
-    const before: FormState = { ...EMPTY_FORM, children: [child] };
-
-    const after = formReducer(before, {
-      type: "update-child",
-      id: "c1",
-      child: { ...child, livesWithYou: "yes", livingArrangement: undefined },
-    });
-
-    expect(after.children[0].livingArrangement).toBeUndefined();
-  });
-
-  it("removes by id, leaving the others in place", () => {
-    const other = { ...child, id: "c2", firstName: "Noor" };
-    const before: FormState = { ...EMPTY_FORM, children: [child, other] };
-
-    const after = formReducer(before, { type: "remove-child", id: "c1" });
-
-    expect(after.children.map((c) => c.id)).toEqual(["c2"]);
-  });
-});

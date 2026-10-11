@@ -6,7 +6,7 @@
 
 export type YesNo = "yes" | "no";
 
-export type SectionId = "eligibility" | "about-you" | "your-children" | "documents";
+export type SectionId = "eligibility" | "about-you" | "documents";
 
 /** Screener answers. See src/sections/eligibility/rules.ts for how they branch. */
 export type EligibilityAnswers = {
@@ -15,27 +15,11 @@ export type EligibilityAnswers = {
   otherHealthBenefits?: YesNo;
 };
 
+/** Your household. See src/sections/about-you/rules.ts. */
 export type AboutYouAnswers = {
-  firstName?: string;
-  lastName?: string;
-  /** ISO date, yyyy-mm-dd. Stored as text: a date of birth has no time and no timezone. */
-  dateOfBirth?: string;
-  phone?: string;
-  email?: string;
-  street?: string;
-  suite?: string;
-  city?: string;
-  province?: string;
-  postalCode?: string;
-};
-
-export type ChildRecord = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;
-  livesWithYou?: YesNo;
-  livingArrangement?: string;
+  hasPartner?: YesNo;
+  /** Number of children, as typed; validated as a whole number before it is saved. */
+  children?: string;
 };
 
 export type UploadedDocument = {
@@ -55,7 +39,6 @@ export type DocumentAnswers = {
 export type FormState = {
   eligibility: EligibilityAnswers;
   aboutYou: AboutYouAnswers;
-  children: ChildRecord[];
   documents: DocumentAnswers;
   /**
    * ISO timestamp, set on submit. Non-null means no longer editable, enforced by the
@@ -79,7 +62,6 @@ export type FormState = {
 export const EMPTY_FORM: FormState = {
   eligibility: {},
   aboutYou: {},
-  children: [],
   documents: { proofOfIncome: [] },
   submittedAt: null,
   confirmed: [],
@@ -89,9 +71,6 @@ export const EMPTY_FORM: FormState = {
 export type FormAction =
   | { type: "save-eligibility"; answers: EligibilityAnswers }
   | { type: "save-about-you"; answers: AboutYouAnswers }
-  | { type: "add-child"; child: ChildRecord }
-  | { type: "update-child"; id: string; child: ChildRecord }
-  | { type: "remove-child"; id: string }
   | { type: "save-documents"; answers: DocumentAnswers }
   | { type: "confirm-section"; id: SectionId }
   | { type: "submit"; at: string; reference: string }
@@ -107,18 +86,6 @@ export function formReducer(state: FormState, action: FormAction): FormState {
 
     case "save-about-you":
       return { ...state, aboutYou: { ...state.aboutYou, ...action.answers } };
-
-    case "add-child":
-      return { ...state, children: [...state.children, action.child] };
-
-    case "update-child":
-      return {
-        ...state,
-        children: state.children.map((c) => (c.id === action.id ? action.child : c)),
-      };
-
-    case "remove-child":
-      return { ...state, children: state.children.filter((c) => c.id !== action.id) };
 
     case "save-documents":
       // Replaces rather than merges, for the same reason as the screener.
