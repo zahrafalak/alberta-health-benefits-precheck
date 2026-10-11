@@ -117,11 +117,9 @@ Leave the rest of the store alone.
 
 ## Deploying
 
-The workflow in `.github/workflows/deploy.yml` publishes to GitHub Pages on every push to `main`. Turn it off if that is not what you want yet.
+This fork deploys on Vercel, which is connected to the GitHub repository: every pull request gets its own preview URL, and merging to `main` deploys production. `.github/workflows/ci.yml` runs the unit tests and the type-checked build on every push and pull request, and `main` only accepts pull requests whose CI check is green.
 
-Pages has to be switched on once, by hand: Settings, then Pages, and set the source to **GitHub Actions**. The workflow cannot do it for you, because `actions/configure-pages` only enables Pages when handed a personal access token, and a template has no business asking you to create one.
-
-The base path derives from the repository name, so a fork under any name deploys with no file edits. Deep links are served as a copy of `index.html` named `404.html`, and Pages sends an HTTP 404 status with it by design. They render correctly, so check by what renders, not by status code.
+The app is served from the root, so `VITE_BASE_PATH` is left unset. `vercel.json` rewrites unknown paths to `index.html`, so deep links load on refresh with a normal 200 status.
 
 ## Tests
 
