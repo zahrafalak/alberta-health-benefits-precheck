@@ -6,6 +6,7 @@ import {
   isWithinLimit,
   assess,
   describeHousehold,
+  documentsToGather,
   SOURCES,
   CHECKED_ON,
   PER_ADDITIONAL_CHILD,
@@ -146,5 +147,22 @@ describe("describeHousehold", () => {
   it("describes the household in plain words", () => {
     expect(describeHousehold({ hasPartner: true, children: 0 })).toBe("a couple with no children");
     expect(describeHousehold({ hasPartner: false, children: 3 })).toBe("a single adult with 3 children");
+  });
+});
+
+describe("documentsToGather", () => {
+  it("asks everyone for the signed application form", () => {
+    const items = documentsToGather({ hasPartner: false, children: 0 }, []);
+    expect(items.map((item) => item.id)).toEqual(["application-form", "signatures"]);
+  });
+
+  it("adds the 18 and 19 year old declaration for a family with children", () => {
+    const items = documentsToGather({ hasPartner: true, children: 1 }, []);
+    expect(items.map((item) => item.id)).toEqual(["application-form", "signatures", "dependant-form"]);
+  });
+
+  it("adds drug records for someone with high drug needs", () => {
+    const items = documentsToGather({ hasPartner: false, children: 0 }, ["drug-needs"]);
+    expect(items.map((item) => item.id)).toEqual(["application-form", "signatures", "drug-records"]);
   });
 });

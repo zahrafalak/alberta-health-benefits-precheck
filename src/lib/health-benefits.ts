@@ -178,3 +178,54 @@ export function assess(
 
   return [child, adult];
 }
+
+/** The 18 and 19 year old dependant declaration, from both program pages. */
+export const DEPENDANT_FORM = {
+  number: "AEHB3654",
+  url: "https://cfr.forms.gov.ab.ca/Form/AEHB3654",
+};
+
+export type ChecklistItem = {
+  id: "application-form" | "signatures" | "dependant-form" | "drug-records" | "case-worker";
+  text: string;
+  /** A form to download, when the item is one. */
+  form?: { number: string; url: string };
+};
+
+/**
+ * What to prepare before applying, from the "How to apply" sections of the program pages:
+ * the form and its two signatures for everyone, then only the items the answers call for.
+ */
+export function documentsToGather(household: Household, adultConditions: AdultCondition[]): ChecklistItem[] {
+  const items: ChecklistItem[] = [
+    {
+      id: "application-form",
+      text: "The application form, with all sections completed. It's the same form for both benefits.",
+      form: APPLICATION_FORM,
+    },
+    {
+      id: "signatures",
+      text: "Your signature and the date on the My Declaration and Consent for Canada Revenue Agency to Verify Income sections.",
+    },
+  ];
+  if (household.children > 0) {
+    items.push({
+      id: "dependant-form",
+      text: "For each child who is 18 or 19, living at home and attending high school: the Declaration of 18 and 19 Year Old Dependent.",
+      form: DEPENDANT_FORM,
+    });
+  }
+  if (adultConditions.includes("drug-needs")) {
+    items.push({
+      id: "drug-records",
+      text: "Documentation of your high ongoing prescription drug needs, such as a pharmacy dispensing history report.",
+    });
+  }
+  if (adultConditions.includes("leaving-support")) {
+    items.push({
+      id: "case-worker",
+      text: "You're leaving Income Support or AISH: speak to your case worker before you apply.",
+    });
+  }
+  return items;
+}
