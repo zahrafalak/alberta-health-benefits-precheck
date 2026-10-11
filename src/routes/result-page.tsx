@@ -6,10 +6,10 @@ import { canSubmit } from "../lib/sections";
 import { householdFrom, adultConditionsFrom } from "../sections/about-you/rules";
 import { incomeAnswersFrom } from "../sections/income/rules";
 import {
-  APPLICATION_FORM,
   BENEFIT_YEAR,
   SOURCES,
   assess,
+  documentsToGather,
   familyIncome,
   formatDollars,
   type ProgramResult,
@@ -46,6 +46,7 @@ export function ResultPage() {
   const income = familyIncome(amounts);
   const results = assess(household, income, adultConditionsFrom(state.aboutYou));
   const qualifying = results.filter((r) => r.mayQualify);
+  const documents = documentsToGather(household, adultConditionsFrom(state.aboutYou));
 
   async function startAgain() {
     await startNewApplication(dispatch);
@@ -80,18 +81,24 @@ export function ResultPage() {
       <GoabText tag="h2" mt="xl" mb="s">
         How to apply
       </GoabText>
-      <ol style={{ marginTop: 0 }}>
-        <li>
-          Fill out the application form{" "}
-          <a href={APPLICATION_FORM.url}>{APPLICATION_FORM.number}</a>. It's the same form for both
-          benefits.
-        </li>
-        <li>Sign and date the declaration and the consent for the Canada Revenue Agency to check your income.</li>
-        <li>Send it to the Health Benefits Contact Centre by email, mail or fax (details below).</li>
-      </ol>
+      <GoabText mt="none" mb="s">
+        Send these to the Health Benefits Contact Centre by email, mail or fax (details below):
+      </GoabText>
+      <ul style={{ marginTop: 0 }}>
+        {documents.map((item) => (
+          <li key={item.id}>
+            {item.text}
+            {item.form && (
+              <>
+                {" "}
+                Form <a href={item.form.url}>{item.form.number}</a>.
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
       <GoabText mt="none" mb="none">
-        If you are leaving Income Support or AISH, speak to your case worker. Rules for the{" "}
-        {BENEFIT_YEAR} benefit year.
+        Rules for the {BENEFIT_YEAR} benefit year.
       </GoabText>
 
       <ResultContactSection />
