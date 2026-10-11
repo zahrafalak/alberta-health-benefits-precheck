@@ -1,11 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { EMPTY_FORM, formReducer, type FormState } from "./form-state";
 
-const withDocuments = (documents: Partial<FormState["documents"]>): FormState => ({
-  ...EMPTY_FORM,
-  documents: { proofOfIncome: [], ...documents },
-});
-
 describe("submitting", () => {
   // A submitted application with no reference locks every page and shows nothing to
   // write down.
@@ -37,22 +32,18 @@ describe("submitting", () => {
 });
 
 describe("saving a branching section", () => {
-  it("replaces the documents answers rather than merging them", () => {
-    const before = withDocuments({
-      hasOtherIncome: "yes",
-      otherIncomeDetail: "Weekend shifts at a cafe",
-    });
+  it("merges income answers page by page, keeping earlier pages", () => {
+    const before: FormState = { ...EMPTY_FORM, income: { yourNetIncome: "18500" } };
 
     const after = formReducer(before, {
-      type: "save-documents",
-      answers: { proofOfIncome: [], hasOtherIncome: "no" },
+      type: "save-income",
+      answers: { supportPayments: "0", taxableSupportPayments: "0" },
     });
 
-    expect(after.documents.hasOtherIncome).toBe("no");
-    expect(after.documents.otherIncomeDetail).toBeUndefined();
+    expect(after.income).toEqual({ yourNetIncome: "18500", supportPayments: "0", taxableSupportPayments: "0" });
   });
 
-  it("already replaces the screener answers, for the same reason", () => {
+  it("replaces the screener answers, so pruned answers don't come back", () => {
     const before: FormState = {
       ...EMPTY_FORM,
       eligibility: {

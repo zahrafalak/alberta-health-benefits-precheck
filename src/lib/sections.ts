@@ -1,6 +1,7 @@
 import type { FormState, SectionId } from "./form-state";
 import { screenerOutcome } from "../sections/eligibility/rules";
 import { isHouseholdComplete } from "../sections/about-you/rules";
+import { isIncomeComplete } from "../sections/income/rules";
 
 /**
  * What this service asks for, as a list, and what counts as having finished each part.
@@ -62,20 +63,13 @@ export const SECTIONS: Section[] = [
     hasCheckPage: true,
   },
   {
-    id: "documents",
-    title: "Income and documents",
+    id: "income",
+    title: "Your income",
     group: "Your application",
-    route: "/documents",
+    route: "/income",
     isUnlocked: screenerPassed,
-    isAnswered: (s) => {
-      const d = s.documents;
-      if (d.proofOfIncome.length === 0) return false;
-      if (d.hasOtherIncome === undefined) return false;
-      if (d.hasOtherIncome === "yes") return hasText(d.otherIncomeDetail);
-      return true;
-    },
-    isStarted: (s) =>
-      s.documents.proofOfIncome.length > 0 || s.documents.hasOtherIncome !== undefined,
+    isAnswered: (s) => isIncomeComplete(s.income, s.aboutYou.hasPartner === "yes"),
+    isStarted: (s) => Object.values(s.income).some((v) => hasText(v)),
     hasCheckPage: true,
   },
 ];

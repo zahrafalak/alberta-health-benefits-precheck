@@ -39,8 +39,8 @@ describe("withReturnTo", () => {
   it("appends rather than starting a second query string", () => {
     // Nothing puts a second parameter on a question page yet; the day something does,
     // a naive ?from= would be unreadable.
-    expect(withReturnTo("/documents/other-income?tab=2", "review")).toBe(
-      "/documents/other-income?tab=2&from=review",
+    expect(withReturnTo("/income/support-payments?tab=2", "review")).toBe(
+      "/income/support-payments?tab=2&from=review",
     );
   });
 
