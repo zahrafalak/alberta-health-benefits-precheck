@@ -9,209 +9,105 @@ import {
 } from "./rules";
 import type { EligibilityAnswers } from "../../lib/form-state";
 
+const passed: EligibilityAnswers = {
+  residency: "yes",
+  status: "yes",
+  otherHealthBenefits: "no",
+};
+
 describe("walking forward", () => {
   it("goes to the next question when the gate is passed", () => {
-    expect(resolveNext("age", { age: "yes" })).toEqual({ question: "residency" });
+    expect(resolveNext("residency", { residency: "yes" })).toEqual({ question: "status" });
   });
 
-  it("ends the screener when a gate fails", () => {
-    expect(resolveNext("age", { age: "no" })).toEqual({ outcome: "ineligible" });
+  it("ends the screener when someone doesn't live in Alberta", () => {
+    expect(resolveNext("residency", { residency: "no" })).toEqual({ outcome: "ineligible" });
   });
 
-  it("fails on the second gate too, not just the first", () => {
-    expect(resolveNext("residency", { age: "yes", residency: "no" })).toEqual({
+  it("ends the screener when someone isn't a citizen or permanent resident", () => {
+    expect(resolveNext("status", { residency: "yes", status: "no" })).toEqual({
       outcome: "ineligible",
     });
   });
 
-  it("skips the follow-up when the answer does not call for it", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "no",
-    };
-    expect(resolveNext("otherSupport", answers)).toEqual({ outcome: "review" });
-  });
-
-  it("opens the follow-up when the answer does call for it", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "yes",
-    };
-    expect(resolveNext("otherSupport", answers)).toEqual({
-      question: "otherSupportDetail",
-    });
+  it("goes to review when nobody gets health benefits from the other programs", () => {
+    expect(resolveNext("otherHealthBenefits", passed)).toEqual({ outcome: "review" });
   });
 });
 
 describe("changing an answer from the review page", () => {
-  const completed: EligibilityAnswers = {
-    age: "yes",
-    residency: "yes",
-    otherSupport: "no",
-  };
-
   it("goes straight back to review when the change opens nothing new", () => {
-    expect(resolveNext("age", completed)).toEqual({ outcome: "review" });
-  });
-
-  it("stops at the newly opened question when a change reveals one", () => {
-    const changed: EligibilityAnswers = { ...completed, otherSupport: "yes" };
-    expect(resolveNext("otherSupport", changed)).toEqual({
-      question: "otherSupportDetail",
-    });
+    expect(resolveNext("residency", passed)).toEqual({ outcome: "review" });
   });
 
   it("routes to a different outcome when a change flips a gate", () => {
-    const changed: EligibilityAnswers = { ...completed, age: "no" };
-    expect(resolveNext("age", changed)).toEqual({ outcome: "ineligible" });
+    expect(resolveNext("status", { ...passed, status: "no" })).toEqual({ outcome: "ineligible" });
   });
 
-  it("counts the questions a change newly opened", () => {
-    const changed: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "yes",
-    };
-    expect(remainingQuestions("otherSupport", changed)).toBe(1);
-  });
-
-  it("counts zero when a change opens nothing", () => {
-    expect(remainingQuestions("age", completed)).toBe(0);
+  it("counts the questions still to answer", () => {
+    expect(remainingQuestions("status", { residency: "yes", status: "yes" })).toBe(1);
+    expect(remainingQuestions("residency", passed)).toBe(0);
   });
 });
 
 describe("reachable", () => {
-  it("includes only the steps on the answered path", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "no",
-    };
-    expect([...reachable(answers)]).toEqual(["age", "residency", "otherSupport"]);
+  it("includes every step on a passed path", () => {
+    expect([...reachable(passed)]).toEqual(["residency", "status", "otherHealthBenefits"]);
   });
 
   it("stops at the first unanswered question", () => {
-    expect([...reachable({ age: "yes" })]).toEqual(["age", "residency"]);
+    expect([...reachable({ residency: "yes" })]).toEqual(["residency", "status"]);
   });
 
   it("stops at a failed gate, so later steps are never reachable", () => {
-    expect([...reachable({ age: "no", residency: "yes" })]).toEqual(["age"]);
+    expect([...reachable({ residency: "no", status: "yes" })]).toEqual(["residency"]);
   });
 });
 
 describe("pruneUnreachable", () => {
-  it("drops an answer to a question the current path no longer asks", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "no",
-      otherSupportDetail: "Some other program",
-    };
-    expect(pruneUnreachable(answers)).toEqual({
-      age: "yes",
-      residency: "yes",
-      otherSupport: "no",
-    });
+  it("discards answers after an early gate flips to no", () => {
+    expect(pruneUnreachable({ ...passed, residency: "no" })).toEqual({ residency: "no" });
   });
 
-  it("keeps the answer when the path does still ask the question", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "yes",
-      otherSupportDetail: "Some other program",
-    };
-    expect(pruneUnreachable(answers)).toEqual(answers);
-  });
-
-  it("discards a whole abandoned branch when an early gate flips", () => {
-    const answers: EligibilityAnswers = {
-      age: "no",
-      residency: "yes",
-      otherSupport: "yes",
-      otherSupportDetail: "Some other program",
-    };
-    expect(pruneUnreachable(answers)).toEqual({ age: "no" });
+  it("keeps every answer on a passed path", () => {
+    expect(pruneUnreachable(passed)).toEqual(passed);
   });
 });
 
 describe("screenerOutcome", () => {
-  it("is null while the screener is unfinished", () => {
-    expect(screenerOutcome({ age: "yes" })).toBeNull();
-  });
-
   it("is null when nothing has been answered", () => {
     expect(screenerOutcome({})).toBeNull();
   });
 
-  it("is ineligible when a gate failed", () => {
-    expect(screenerOutcome({ age: "no" })).toBe("ineligible");
+  it("is null while the screener is unfinished", () => {
+    expect(screenerOutcome({ residency: "yes", status: "yes" })).toBeNull();
   });
 
-  it("is review when the whole screener passed", () => {
-    expect(screenerOutcome({ age: "yes", residency: "yes", otherSupport: "no" })).toBe(
-      "review",
-    );
+  it("is ineligible when someone in the household gets AISH health benefits", () => {
+    expect(screenerOutcome({ residency: "yes", status: "yes", otherHealthBenefits: "yes" })).toBe("ineligible");
   });
 
-  it("requires the follow-up before it counts as finished", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "yes",
-    };
-    expect(screenerOutcome(answers)).toBeNull();
-    expect(screenerOutcome({ ...answers, otherSupportDetail: "Some program" })).toBe(
-      "review",
-    );
+  // Passing the screener isn't qualifying: income is still to be checked
+  it("goes on to the questions when every gate is passed", () => {
+    expect(screenerOutcome({ residency: "yes", status: "yes", otherHealthBenefits: "no" })).toBe("review");
   });
 });
 
 describe("where someone re-entering the screener lands", () => {
   it("starts at the beginning when nothing has been answered", () => {
-    expect(firstUnansweredStep({})).toBe("age");
+    expect(firstUnansweredStep({})).toBe("residency");
   });
 
   it("stops at the first question still unanswered", () => {
-    expect(firstUnansweredStep({ age: "yes" })).toBe("residency");
-    expect(firstUnansweredStep({ age: "yes", residency: "yes" })).toBe("otherSupport");
+    expect(firstUnansweredStep({ residency: "yes" })).toBe("status");
+    expect(firstUnansweredStep({ residency: "yes", status: "yes" })).toBe("otherHealthBenefits");
   });
 
-  it("goes to a follow-up that the answers actually opened", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "yes",
-    };
-    expect(firstUnansweredStep(answers)).toBe("otherSupportDetail");
-  });
-
-  // Unanswered and unasked look identical unless you walk the branches: saying no ends
-  // the screener, and the follow-up is never asked.
-  it("is finished when the path ends, even though a question off the path is unanswered", () => {
-    const answers: EligibilityAnswers = {
-      age: "yes",
-      residency: "yes",
-      otherSupport: "no",
-    };
-    expect(answers.otherSupportDetail).toBeUndefined();
-    expect(firstUnansweredStep(answers)).toBeNull();
-  });
-
-  it("is finished when every question on the path is answered", () => {
-    expect(
-      firstUnansweredStep({
-        age: "yes",
-        residency: "yes",
-        otherSupport: "yes",
-        otherSupportDetail: "Some program",
-      }),
-    ).toBeNull();
+  it("is finished when every question is answered", () => {
+    expect(firstUnansweredStep(passed)).toBeNull();
   });
 
   it("is finished when a gate failed, because there is nothing further to ask", () => {
-    expect(firstUnansweredStep({ age: "no" })).toBeNull();
+    expect(firstUnansweredStep({ residency: "no" })).toBeNull();
   });
 });
