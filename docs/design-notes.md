@@ -602,6 +602,8 @@ version of that component will not know you did it.
 
 ## Deep links on GitHub Pages return 404 on purpose (`.github/workflows/deploy.yml`, `vite.config.ts`)
 
+> This fork deploys on Vercel instead, with a rewrite in `vercel.json`; the note below describes the template's original GitHub Pages setup.
+
 GitHub Pages has no server-side rewrite, so deep links work by serving a copy of
 index.html as 404.html and letting the router take over. Pages sends an HTTP 404 status
 alongside that document by design. The page is correct and renders correctly; only the
