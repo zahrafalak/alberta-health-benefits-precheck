@@ -3,21 +3,10 @@ import { useForm } from "../store/form-store";
 import { SECTIONS } from "../lib/sections";
 
 /**
- * Which pages are open, and when they close. Both rules are routes rather than checks,
- * so a page is covered by where it is registered in index.tsx. A task list that greys a
- * row out controls only the doors it draws; the address bar and a bookmark are doors too.
+ * Which pages are open. The rule is a route rather than a check, so a page is covered by
+ * where it is registered in index.tsx. A task list that greys a row out controls only the
+ * doors it draws; the address bar and a bookmark are doors too.
  */
-
-export function EditableOnly() {
-  const { state } = useForm();
-
-  // replace, so Back does not bounce between the page and the confirmation.
-  if (state.submittedAt) {
-    return <Navigate to="/confirmation" replace />;
-  }
-
-  return <Outlet />;
-}
 
 /**
  * Sections the screener has not opened yet. Resolved against SECTIONS, so a new section

@@ -1,128 +1,87 @@
-# Public form template
+# Alberta Health Benefits pre-check
 
-A complete, working government form you can fork and own. Built with the Government of Alberta Design System.
+An unofficial pre-check for the Alberta Child Health Benefit and the Alberta Adult Health Benefit. Answer a few questions and see, in plain language, whether you may qualify, why, and exactly what to send if you apply.
 
-Somebody starts at a task list, answers an eligibility screener, works through three sections of questions, checks their answers, and submits. They get a reference number. If they close the tab partway through, their answers are still there when they come back. If they submit and then try to edit, the application is closed to them.
+**Live:** https://alberta-health-benefits-precheck.vercel.app
 
-It is a real service in every way except three, which `docs/design-notes.md` explains: nothing is ever sent anywhere, uploaded files are kept by name and size only, and nobody is authenticated.
+[![CI](https://github.com/zahrafalak/alberta-health-benefits-precheck/actions/workflows/ci.yml/badge.svg)](https://github.com/zahrafalak/alberta-health-benefits-precheck/actions/workflows/ci.yml)
 
-## Use this template
+> This is a personal project, not a Government of Alberta service. It doesn't apply for you, and it never sends your answers anywhere. Always check the official program pages.
 
-Click **Use this template** at the top of this repository. That gives you a fresh repository with no shared history: from that moment the code is yours, and nothing here will change under you.
+## The problem
 
-```bash
-npm install
-npm run dev
-```
+In July 2024 the Alberta Ombudsman published [Programs Adrift](https://www.ombudsman.ab.ca/programs-adrift/), an investigation into these two programs. The summary report found that "there is no online version of the programs" and that "program technology is obsolete and ineffective", and recommended the programs "explain that ongoing costs are deducted from household income" and "give reasons for denying benefits".
 
-The app runs at `http://localhost:5173`.
+Today you still apply with a fillable PDF (form AEHB3931) sent by email, mail or fax. To know whether it's worth applying, you have to read two long pages, find the right row in an income table, and work out your "calculated income" by hand.
 
-```bash
-npm run build        # type-checks, then builds
-npm test             # unit tests
-npm run test:e2e     # browser tests
-```
+## What it does
 
-## Where this template starts and stops
+1. **Screener:** lives in Alberta, citizen or permanent resident, and not getting health benefits from Income Support, AISH or the federal Non-Insured Health Benefits program. Anyone who doesn't meet one sees why, with links to the program pages.
+2. **Your household:** partner or not, number of children, and the conditions the Adult benefit requires (pregnant, high ongoing prescription drug needs, or leaving Income Support or AISH).
+3. **Your income:** the amounts the programs use, with help text saying which tax line to find them on.
+4. **Your result:** for each program, "You may qualify" or "You may not qualify" with the reason, for example "Your family income of $22,500 is within the limit of $26,023 for a single adult with 1 child." Then a checklist of what to send, built from the answers, and the contact centre's details.
 
-```
-  Guidance page on alberta.ca                        NOT this template
-  What the service is, who can apply, what
-  you need, and a "Start now" button
-                 |
-                 v
-  Sign in                                            NOT this template
-                 |
-                 v
-  My applications                                    NOT this template, not built yet
-  Continue one, or start a new one. Only
-  needed if somebody can have more than one
-                 |
-                 v
-  +---------------------------------------+
-  |  Task list                            |          THIS TEMPLATE
-  |  Eligibility screener                 |
-  |  Question sections, each one ending   |
-  |    on its own check answers page      |
-  |  Check your answers, for the whole    |
-  |    application                        |
-  |  Submit, and the confirmation         |
-  +---------------------------------------+
-```
+What it doesn't do: decide anything (the program decides, using income the Canada Revenue Agency confirms), submit an application, or store answers anywhere but this browser. **Clear my answers** in the header removes them.
 
-The guidance page lives on alberta.ca. Sign in is a platform concern, and nothing here authenticates anybody. My applications is yours to build, before the task list, if somebody can have more than one application in flight. Everything from the task list onward is the part that is the same shape in every service, and the hardest to get right.
+## Where the rules come from
 
-## What is in here
+Every rule is copied from the two program pages on alberta.ca, checked on the date in `CHECKED_ON`:
+
+- [Alberta Child Health Benefit](https://www.alberta.ca/alberta-child-health-benefit)
+- [Alberta Adult Health Benefit](https://www.alberta.ca/alberta-adult-health-benefit)
+
+The income limits by family size, $4,973 for each child beyond four, the five-step income formula, the Adult conditions and the documents to send all live in `src/lib/health-benefits.ts`, with no React in it. When the pages change, update the numbers and `CHECKED_ON` together; the tests show what moved.
+
+## How it's built
+
+It starts from the Government of Alberta's [public form template](https://github.com/GovAlta/goa-public-form-playground) and uses the GoA Design System (`@abgov/react-components`), React, TypeScript and Vite.
 
 ```
 src/
-  sections/     One folder per section of the service: its rules (question
-                order, branching, completeness, validation), its pages, and
-                its summary for the review. Copy one to add a section.
-  lib/          What the sections share and the service's shape: the section
-                registry, the application's state, validation, formatting.
-                Nothing in here or in a section's rules imports React, the
-                router, or the design system, and a test enforces that.
-  components/   Shared pieces the pages are built from: the page layout, the
-                form set, the summary trio, the error summary,
-                and the shell every task's check answers page is built on.
-  routes/       The pages that span sections: the task list, the review and
-                confirmation pages, and the route guards.
-  store/        State, and the two seams a real service replaces.
-e2e/            Browser tests. Yours to delete.
+  lib/          The benefit rules (health-benefits.ts), the section registry, the
+                application's state and validation. No React, the router or the
+                design system in here or in a section's rules, and a test enforces it.
+  sections/     One folder per section: eligibility, about-you (shown as "Your
+                household") and income. Each has its rules, pages and summary.
+  components/   Shared pieces the pages are built from: layout, form set, summaries,
+                error summary, and the result page shell.
+  routes/       Pages that span sections: the task list, review, result and guards.
+  store/        Holds the answers and saves them in this browser.
+e2e/            Browser smoke tests (Playwright).
 scripts/        Checks that keep this README honest.
 ```
 
-The rules (`src/lib`, and each section's rules file) hold what the service *is*, and it would be the same service in Angular or Vue. Everything above them is one way of rendering that. When a rule seems to live in a page, it is usually in the wrong place.
+Changes from the template: the service is ours (name, questions, rules), the template's submit and reference-number confirmation are gone because nothing is submitted, and the result page (`src/routes/result-page.tsx`) works the answer out in the browser. Answers are saved only in this browser, by `src/store/persistence.ts`, so someone can close the tab and come back.
 
-## Adding a section
+## Tests and CI
 
-1. Copy a section folder, `src/sections/about-you` say, and rename it: its rules, its pages, and the summary shown on the review.
-2. Add its answers to the application in `src/lib/form-state.ts`: a type, a field on the state, and a reducer action that saves it.
-3. Register it in `src/lib/sections.ts`, which puts it on the task list and decides when it is unlocked and when it is complete.
-4. Add its routes in `src/index.tsx`, inside the guards, and its summary to `src/routes/review-page.tsx`.
+```bash
+npm install
+npm run dev          # http://localhost:5173
+npm test             # unit tests (Vitest)
+npm run test:e2e     # browser tests (Playwright)
+npm run build        # type-checks, then builds
+```
 
-The compiler finds the rest.
+- **Rules** (`src/lib/health-benefits.test.ts`): every row of both income tables, the extra-child amount, each step of the income formula, at / $1 below / $1 above the limit, every path through the result, and the document checklist. Breaking the code on purpose (for example `<=` to `<`) makes a test fail.
+- **Questions** (`src/sections/eligibility/rules.test.ts`, `src/sections/about-you/rules.test.ts`, `src/sections/income/rules.test.ts`): the screener's branching, the household and Adult-condition answers, and amount parsing ("$18,500" becomes 18500).
+- **Shape** (`src/lib/framework-neutral.test.ts`): the rules never import React or the design system.
+- **README** (`scripts/readme.test.ts`): every file named here exists, and the page title matches the service name.
 
-## The first things to change
+`.github/workflows/ci.yml` runs the tests and the build on every push and pull request. `main` is protected: a pull request merges only when CI is green. Vercel builds a preview for every pull request and deploys `main` to production; `vercel.json` sends every path to the app so deep links work on refresh. Each piece of work was a GitHub issue with acceptance criteria and its own branch and pull request.
 
-The service's identity ships as a placeholder and its substance ships realistic. The questions, branching, validation and review page are real, because that is what makes the template worth reading; the parts that name the service are bracketed, so nobody can deploy it by accident and have it look like a real government service. A plausible name survives into production. A bracket cannot.
+## Accessibility
 
-| What | Where | Ships as |
-| --- | --- | --- |
-| The service name | `src/lib/service.ts` and the `<title>` in `index.html` | `[Service name]` |
-| Contact details on the result pages | `src/components/results-page.tsx` | Bracketed placeholders |
-| The declaration above the submit button | `src/routes/review-page.tsx` | A bracketed placeholder |
-| The reference number prefix | `src/store/submission.ts` | `ABC` |
+The design system components carry their own accessibility work. On top of that:
 
-The reference number is generated in the browser so the confirmation page has something real on it. In your service it comes back from your backend.
+- **Keyboard only** (checked in Chrome): the tab order follows the page (logo, Clear my answers, tasks, buttons, footer links); a task opens with Enter; an answer is chosen with Space and Continue works with Enter.
+- **Errors:** continuing without an answer shows "There is a problem" with what to fix, and moves focus to it so a screen reader announces it.
+- **Plain language** throughout, and every amount says which tax line to find it on.
 
-## Starting empty, and clearing answers
+## How AI was used
 
-A new visitor starts on an empty form. Answers are saved only in this browser as they are entered, so somebody can close the tab and come back. **Clear my answers** in the header removes them, for example on a shared computer.
+I used Claude Code as a co-developer. I planned the work as GitHub issues, and for each one I reviewed the code, ran it in the browser, and wrote key tests myself: the boundary tests at the income limit, the screener tests, the test that a couple with two children at $40,000 may not qualify, and the document checklist tests. Every rule was checked against the alberta.ca pages, and nothing in this app calls an AI service. `AGENTS.md` sets the rules AI tools follow in this repository.
 
-## The two seams
+## Credits
 
-`src/store/persistence.ts` holds part-finished applications and `src/store/submission.ts` is the moment the application leaves the browser. Both are `async`, so a backend fits as they are. Neither handles failure, and a real service must: surface a failed save, and put the catch for a failed submit in `src/routes/review-page.tsx`, because what somebody sees then is a design decision about your service. Local storage is a stand-in, not a recommendation: a part-finished application is personal information, and where it lives is for your service and your privacy reviewers to decide.
-
-## Deploying
-
-This fork deploys on Vercel, which is connected to the GitHub repository: every pull request gets its own preview URL, and merging to `main` deploys production. `.github/workflows/ci.yml` runs the unit tests and the type-checked build on every push and pull request, and `main` only accepts pull requests whose CI check is green.
-
-The app is served from the root, so `VITE_BASE_PATH` is left unset. `vercel.json` rewrites unknown paths to `index.html`, so deep links load on refresh with a normal 200 status.
-
-## Tests
-
-Unit tests sit beside what they test in `src/lib`, `src/sections` and `src/store`. The browser suite, `e2e/smoke.spec.ts`, is one file covering the wiring bugs a template ships while its unit tests are green: answers leaking between pages, a draft lost on refresh, an error summary that does not take focus, routes a submitted application can still reach. It is yours to delete, with `playwright.config.ts` and the `test:e2e` script. Tests here assert the contract a fork keeps, never a value a fork changes: the reference number tests check the shape, not the `ABC` prefix.
-
-## Custom CSS
-
-The component library allows no custom CSS. A service needs some, for layout, rhythm and states like `:hover` that a style attribute cannot express. The rule, in `src/index.css`: GoA custom properties for values, your own class names for scope, and never a component's internals.
-
-## Keeping dependencies current
-
-The `@abgov` packages are on caret ranges with a committed lockfile, so `npm update` stays on stable within the current majors. Versions live in `package.json` and are not repeated here, because a version in a README goes stale silently.
-
-## How this README is kept honest
-
-`scripts/readme.test.ts` runs with `npm test` and fails when the files and folders named here stop existing, a folder under `src/` goes unmentioned, or the `<title>` in `index.html` stops matching `SERVICE_NAME`. It checks names, not sentences, so somebody still has to read this.
+Built on the Government of Alberta's public form template and design system, both public on GitHub. The template's own design notes are kept in `docs/design-notes.md`.

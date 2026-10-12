@@ -42,31 +42,18 @@ export type FormState = {
   aboutYou: AboutYouAnswers;
   income: IncomeAnswers;
   /**
-   * ISO timestamp, set on submit. Non-null means no longer editable, enforced by the
-   * guard in src/routes/guards.tsx that sends a submitted application to its confirmation.
-   */
-  submittedAt: string | null;
-  /**
    * Tasks whose check-answers page the person has passed through. Necessary, never
    * sufficient: nothing removes an id, because a change that reopens a question makes
    * the answers incomplete on their own and the task drops back to In progress.
    */
   confirmed: SectionId[];
-  /**
-   * The receipt, set with submittedAt and saved with the draft: refreshing the
-   * confirmation page is the likeliest next thing, and losing the reference then is
-   * unforgivable.
-   */
-  reference: string | null;
 };
 
 export const EMPTY_FORM: FormState = {
   eligibility: {},
   aboutYou: {},
   income: {},
-  submittedAt: null,
   confirmed: [],
-  reference: null,
 };
 
 export type FormAction =
@@ -74,7 +61,6 @@ export type FormAction =
   | { type: "save-about-you"; answers: AboutYouAnswers }
   | { type: "save-income"; answers: IncomeAnswers }
   | { type: "confirm-section"; id: SectionId }
-  | { type: "submit"; at: string; reference: string }
   | { type: "hydrate"; state: FormState }
   | { type: "reset" };
 
@@ -95,9 +81,6 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       return state.confirmed.includes(action.id)
         ? state
         : { ...state, confirmed: [...state.confirmed, action.id] };
-
-    case "submit":
-      return { ...state, submittedAt: action.at, reference: action.reference };
 
     case "hydrate":
       return action.state;
