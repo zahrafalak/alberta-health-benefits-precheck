@@ -14,7 +14,6 @@ import {
   type FormState,
 } from "../lib/form-state";
 import { clearDraft, loadDraft, saveDraft } from "./persistence";
-import type { Receipt } from "./submission";
 
 /**
  * The application's answers, held in one place so the task list and the review page
@@ -25,8 +24,6 @@ import type { Receipt } from "./submission";
 type FormContextValue = {
   state: FormState;
   dispatch: (action: FormAction) => void;
-  /** Record the receipt and save it before returning: the record has to exist before the person can leave the page. */
-  recordSubmission: (receipt: Receipt) => Promise<void>;
 };
 
 const FormContext = createContext<FormContextValue | null>(null);
@@ -68,21 +65,8 @@ export function FormProvider({ children }: { children: ReactNode }) {
   // over real progress.
   if (!hydrated) return null;
 
-  // The save effect above runs after the next render, and a page can be unloaded before
-  // that: a refresh in the moment after submit would land on a draft with no reference.
-  // So submitting saves first, and only then updates the state.
-  async function recordSubmission(receipt: Receipt): Promise<void> {
-    const action: FormAction = {
-      type: "submit",
-      at: receipt.submittedAt,
-      reference: receipt.reference,
-    };
-    await saveDraft(formReducer(state, action));
-    dispatch(action);
-  }
-
   return (
-    <FormContext.Provider value={{ state, dispatch, recordSubmission }}>
+    <FormContext.Provider value={{ state, dispatch }}>
       {children}
     </FormContext.Provider>
   );

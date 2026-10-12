@@ -1,3 +1,5 @@
+> These are the design notes of the Government of Alberta's public form template this project started from, kept for reference. This fork has since removed the submit step, the confirmation page and `src/store/submission.ts`: nothing is submitted, and the result is worked out in the browser. See the README.
+
 # Design notes
 
 The reasoning behind decisions in the code, kept here so the code reads at the speed of

@@ -12,10 +12,9 @@ import { EligibilitySection } from "./sections/eligibility/pages";
 import { AboutYouSection } from "./sections/about-you/pages";
 import { IncomeSection } from "./sections/income/pages";
 import { NotEligible } from "./sections/eligibility/not-eligible";
-import { EditableOnly, UnlockedOnly } from "./routes/guards";
+import { UnlockedOnly } from "./routes/guards";
 import { ReviewPage } from "./routes/review-page";
 import { ResultPage } from "./routes/result-page";
-import { ConfirmationPage } from "./routes/confirmation-page";
 
 import "./index.css";
 
@@ -31,26 +30,19 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <FormProvider>
         <Routes>
           <Route path="/" element={<App />}>
-            {/* Everything inside closes the moment the application is submitted. A new
-                question page goes here and inherits the rule. */}
-            <Route element={<EditableOnly />}>
-              <Route index element={<TaskList />} />
+            <Route index element={<TaskList />} />
 
-              {/* The sections the screener gates. The task list and the review stay outside:
-                  they are how a person finds out what is shut and why. */}
-              <Route element={<UnlockedOnly />}>
-                <Route path="eligibility/*" element={<EligibilitySection />} />
-                <Route path="about-you/*" element={<AboutYouSection />} />
-                <Route path="income/*" element={<IncomeSection />} />
-              </Route>
-
-              <Route path="review" element={<ReviewPage />} />
-              <Route path="result" element={<ResultPage />} />
+            {/* The sections the screener gates. The task list and the review stay outside:
+                they are how a person finds out what is shut and why. */}
+            <Route element={<UnlockedOnly />}>
+              <Route path="eligibility/*" element={<EligibilitySection />} />
+              <Route path="about-you/*" element={<AboutYouSection />} />
+              <Route path="income/*" element={<IncomeSection />} />
             </Route>
 
-            {/* Outside the group: the two pages that are the end of a road. */}
+            <Route path="review" element={<ReviewPage />} />
+            <Route path="result" element={<ResultPage />} />
             <Route path="not-eligible" element={<NotEligible />} />
-            <Route path="confirmation" element={<ConfirmationPage />} />
           </Route>
         </Routes>
       </FormProvider>

@@ -126,8 +126,15 @@ export function TaskList() {
         <GoabText tag="h1" mt="none" mb="none">
           {SERVICE_NAME}
         </GoabText>
-        <GoabBadge type="information" content="Draft" />
+        <GoabBadge type="information" content="Unofficial" />
       </div>
+
+      <GoabText mt="m" mb="none">
+        Answer a few questions to see if you may qualify for the Alberta Child Health Benefit
+        or the Alberta Adult Health Benefit, and what to send if you apply. This is not a
+        Government of Alberta service and it doesn't apply for you. Your answers stay in this
+        browser and are never sent anywhere. Use <strong>Clear my answers</strong> when you're done.
+      </GoabText>
 
       <GoabCallout
         type={ready ? "success" : "information"}
@@ -138,7 +145,7 @@ export function TaskList() {
         mb="xl"
       >
         {ready
-          ? "Check your answers before you send your application."
+          ? "Check your answers, then see your result."
           : "Your progress is saved automatically. You can come back and finish this later."}
       </GoabCallout>
 

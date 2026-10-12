@@ -11,7 +11,7 @@ type ResultsPageProps = {
 };
 
 /**
- * The terminal outcome screen: eligible, not eligible, or submitted. No back link and
+ * The terminal outcome screen: the result, or not eligible. No back link and
  * it leads with a status Callout, so it renders in the app shell directly rather than
  * through PublicFormLayout.
  */

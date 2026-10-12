@@ -7,9 +7,11 @@ import {
   GoabAppFooter,
   GoabAppFooterMetaSection,
   GoabPageBlock,
+  GoabText,
 } from "@abgov/react-components";
 
 import { SERVICE_NAME } from "./lib/service";
+import { CHECKED_ON, SOURCES } from "./lib/health-benefits";
 import { useForm, startNewApplication } from "./store/form-store";
 
 /** A sliver of footer above the fold, so a short page reads as finished rather than clipped. */
@@ -94,6 +96,11 @@ export function App() {
         >
           <ScrollToTop />
           <Outlet />
+          {/* The footer only takes links, so the disclaimer sits at the end of every page. */}
+          <GoabText size="body-s" mt="3xl" mb="none" color="secondary">
+            Unofficial tool. Rules from alberta.ca as of {CHECKED_ON}. Always check the official
+            program page.
+          </GoabText>
         </div>
       </GoabPageBlock>
 
@@ -101,10 +108,9 @@ export function App() {
         {/* The meta section lays links out horizontally; the nav section would stack them. */}
         <GoabAppFooter>
           <GoabAppFooterMetaSection>
-            <a href="#">My profile</a>
-            <a href="#">Accessibility</a>
-            <a href="#">Privacy</a>
-            <a href="#">Terms and conditions</a>
+            <a href={SOURCES.child.url}>{SOURCES.child.name}</a>
+            <a href={SOURCES.adult.url}>{SOURCES.adult.name}</a>
+            <a href="https://github.com/zahrafalak/alberta-health-benefits-precheck">Source code</a>
           </GoabAppFooterMetaSection>
         </GoabAppFooter>
       </section>
